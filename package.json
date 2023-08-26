@@ -1,0 +1,11 @@
+{
+	"type": "module",
+    "scripts": {
+        "build": "node app.js",
+        "debug": "node --inspect=0.0.0.0:9229 app.js"
+    },
+	"dependencies": {
+		"ipp": "^2.0.1",
+		"pdfkit": "^0.13.0"
+	}
+}
