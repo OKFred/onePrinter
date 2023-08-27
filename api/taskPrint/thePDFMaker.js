@@ -1,0 +1,65 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import pdfkit from "pdfkit";
+
+let PDFDocument = pdfkit;
+//let now = new Date().toLocaleString();
+
+let __dirname = path.dirname(fileURLToPath(import.meta.url));
+// console.log("当前目录：", __dirname);
+let pdfFilePath = path.join(process.cwd(), "public", "打印.pdf");
+
+export { onNewPDF };
+
+// 创建PDF文档
+async function onNewPDF(dataArr = [], callbacks) {
+    if (!dataArr || !Array.isArray(dataArr) || !dataArr.length) {
+        callbacks?.({
+            success: false,
+            data: null,
+            message: "参数错误",
+        });
+        return;
+    }
+    let result = await new Promise((resolve, reject) => {
+        const pdfDoc = new PDFDocument({
+            font: path.join(__dirname, "黑体.ttf"),
+            size: [4 * 72, 6 * 72], // 将英寸转换为点（1英寸 = 72点）
+            margin: { left: 0, right: 0, top: 0, bottom: 0 }, // 设置边距
+            bufferPages: true, // 允许将页面保存在内存中，以便稍后写入文件
+        });
+
+        // 将PDF写入文件
+        const stream = pdfDoc.pipe(fs.createWriteStream(pdfFilePath));
+        stream.on("finish", function () {
+            let thisTime = new Date().toLocaleTimeString();
+            console.log(thisTime, "PDF已就位");
+            resolve(true);
+        });
+
+        // 插入图片到PDF
+        /*     pdfDoc.image("./logo.png", {
+        fit: [33, 33], // 图片尺寸
+        align: "left", // 图片对齐方式
+        valign: "top", // 图片垂直对齐方式
+        x: 50, // 左上角x坐标
+        y: 0, // 左上角y坐标
+    }); */
+
+        //const dataArr = ["这是一个多行文本示例", "Trust AI technology", now];
+
+        pdfDoc.moveUp(5); // 将绘图位置上移一个单位，相当于设置文本上边距为0
+        dataArr.forEach((line) => {
+            pdfDoc.fontSize(12).text(line, { align: "center" });
+            pdfDoc.moveDown(0.5); // 设置最小间距，单位是行高
+        });
+        // 结束PDF文档
+        pdfDoc.end();
+    });
+    callbacks?.({
+        success: result ? true : false,
+        data: "/public/打印.pdf",
+        message: result ? "PDF文件已就位" : "PDF文件生成失败",
+    });
+}
