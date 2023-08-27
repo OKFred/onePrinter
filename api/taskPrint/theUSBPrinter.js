@@ -4,7 +4,6 @@ import ipp from "ipp";
 
 let printerURL = globalThis.envGetter("printerURL");
 let printer = ipp.Printer(printerURL); // 创建IPP客户端
-let pdfFilePath = path.join(process.cwd(), "public", "打印.pdf");
 
 export { onPrinterInfo, onPrintPDF };
 
@@ -29,8 +28,15 @@ async function onPrinterInfo(data, callbacks) {
     });
 }
 
-async function onPrintPDF(data, callbacks) {
-    let result = await print(fs.readFileSync(pdfFilePath));
+async function onPrintPDF({ pdfFilePath } = {}, callbacks) {
+    if (!pdfFilePath) {
+        return callbacks?.({ success: false, data: null, message: "缺少入参：" + "pdfFilePath" });
+    }
+    let filePath = path.join(process.cwd(), pdfFilePath);
+    if (!fs.existsSync(filePath) || !filePath.startsWith(path.join(process.cwd(), "public"))) {
+        return callbacks?.({ success: false, data: null, message: "文件不存在" });
+    } //检查最终路径是否在./public下，防止越权访问。
+    let result = await print(fs.readFileSync(filePath));
     let thisTime = new Date().toLocaleTimeString();
     let message = result ? "打印任务已发送" : "打印任务发送失败";
     console.log(thisTime, message);

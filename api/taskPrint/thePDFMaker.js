@@ -8,7 +8,6 @@ let PDFDocument = pdfkit;
 
 let __dirname = path.dirname(fileURLToPath(import.meta.url));
 // console.log("当前目录：", __dirname);
-let pdfFilePath = path.join(process.cwd(), "public", "打印.pdf");
 
 export { onNewPDF };
 
@@ -22,6 +21,8 @@ async function onNewPDF(dataArr = [], callbacks) {
         });
         return;
     }
+    let relativePath = "/public/打印" + new Date().getTime() + ".pdf";
+    let pdfFilePath = path.join(process.cwd(), relativePath);
     let result = await new Promise((resolve, reject) => {
         const pdfDoc = new PDFDocument({
             font: path.join(__dirname, "黑体.ttf"),
@@ -59,7 +60,7 @@ async function onNewPDF(dataArr = [], callbacks) {
     });
     callbacks?.({
         success: result ? true : false,
-        data: "/public/打印.pdf",
+        data: { pdfFilePath: relativePath },
         message: result ? "PDF文件已就位" : "PDF文件生成失败",
     });
 }
