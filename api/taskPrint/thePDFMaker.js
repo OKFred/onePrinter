@@ -40,13 +40,13 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
         });
 
         // 插入图片到PDF
-        pdfDoc.image(path.join(process.cwd(), "/public/logo.png"), {
+/*         pdfDoc.image(path.join(process.cwd(), "/public/logo.png"), {
             fit: [25, 25], // 图片尺寸
             align: "left", // 图片对齐方式
             valign: "top", // 图片垂直对齐方式
             x: 50, // 左上角x坐标
             y: 0, // 左上角y坐标
-        });
+        }); */
         // 设置虚线样式
         pdfDoc.dash(5, { space: 5 }); // 参数表示虚线段的长度和间距
         pdfDoc
