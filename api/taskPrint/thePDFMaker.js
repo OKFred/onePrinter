@@ -12,8 +12,8 @@ let __dirname = path.dirname(fileURLToPath(import.meta.url));
 export { onNewPDF };
 
 // 创建PDF文档
-async function onNewPDF(dataArr = [], callbacks) {
-    if (!dataArr || !Array.isArray(dataArr) || !dataArr.length) {
+async function onNewPDF({ textArr = [] } = {}, callbacks) {
+    if (!textArr || !Array.isArray(textArr) || !textArr.length) {
         callbacks?.({
             success: false,
             data: null,
@@ -40,18 +40,18 @@ async function onNewPDF(dataArr = [], callbacks) {
         });
 
         // 插入图片到PDF
-        /*     pdfDoc.image("./logo.png", {
-        fit: [33, 33], // 图片尺寸
-        align: "left", // 图片对齐方式
-        valign: "top", // 图片垂直对齐方式
-        x: 50, // 左上角x坐标
-        y: 0, // 左上角y坐标
-    }); */
+        pdfDoc.image("./logo.png", {
+            fit: [33, 33], // 图片尺寸
+            align: "left", // 图片对齐方式
+            valign: "top", // 图片垂直对齐方式
+            x: 50, // 左上角x坐标
+            y: 0, // 左上角y坐标
+        });
 
-        //const dataArr = ["这是一个多行文本示例", "Trust AI technology", now];
+        //const textArr = ["这是一个多行文本示例", "Trust AI technology", now];
 
         pdfDoc.moveUp(5); // 将绘图位置上移一个单位，相当于设置文本上边距为0
-        dataArr.forEach((line) => {
+        textArr.forEach((line) => {
             pdfDoc.fontSize(12).text(line, { align: "center" });
             pdfDoc.moveDown(0.5); // 设置最小间距，单位是行高
         });

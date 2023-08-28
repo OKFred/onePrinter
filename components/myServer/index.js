@@ -14,7 +14,14 @@ let sessionMiddleware = session({
     proxy: true,
 }); //启用session
 
-app.use("/public", express.static("public"));
+app.use(
+    "/public",
+    express.static("public", {
+        setHeaders: function (res, path, stat) {
+            res.set("Access-Control-Allow-Origin", "*");
+        },
+    }),
+); //跨域
 app.use(json()); //接收 POST 必备
 app.use(urlencoded({ extended: true }));
 app.use(expressFormData.parse());
