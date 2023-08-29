@@ -17,9 +17,13 @@ Object.assign(globalThis, network); //全局网络请求
         fs.writeFileSync(
             path,
             `# 环境变量
-PORT=3000`,
+PORT=9009
+printerURL=
+sessionSecret=
+WEBSOCKET_SERVER_URL=ws://127.0.0.1:9099/
+`,
         );
-        console.log("🚩首次加载，需要配置.env");
+        console.log("🚩首次加载，请配置目录下的.env");
     }
 })();
 
