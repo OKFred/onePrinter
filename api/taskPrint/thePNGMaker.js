@@ -5,7 +5,7 @@ import { onPostMessage } from "../../components/myWebSocketClient/index.js";
 
 export { onNewPNG, onPrintPNG };
 
-// 创建PDF文档
+// 创建PNG图片
 async function onNewPNG({ relativePath = "", config } = {}, callbacks) {
     if (!relativePath) {
         callbacks?.({
@@ -27,14 +27,13 @@ async function onNewPNG({ relativePath = "", config } = {}, callbacks) {
     let result;
     try {
         let args = [absolutePath];
-        if (config && config.width) args.push({ width: config.width });
-        let imageDataArr = await pdf2img.convert(...args); //约为6cm，汉印打印机最大宽度
-        for (let i = 0; i < imageDataArr.length; i++)
-            fs.writeFile(
-                imageBase + `_${i}.png`,
-                imageDataArr[i],
-                (error) => error && console.error("Error: " + error),
-            );
+        if (config && typeof config === "object") args.push(config);
+        let imageDataArr = await pdf2img.convert(...args);
+        let i = 0;
+        for (let imageData of imageDataArr) {
+            fs.writeFileSync(imageBase + `_${i}.png`, imageData);
+            i++;
+        }
         result = "/public/" + fileName + `_0.png`;
     } catch (error) {
         console.log(error);
@@ -42,11 +41,12 @@ async function onNewPNG({ relativePath = "", config } = {}, callbacks) {
     }
     callbacks?.({
         success: result ? true : false,
-        data: { pngFilePath: result },
+        data: { relativePath: result },
         message: result ? "PNG文件已就位" : "PNG文件生成失败",
     });
 }
 
+// 打印PNG图片
 async function onPrintPNG({ relativePath = "", config } = {}, callbacks) {
     if (!relativePath) {
         callbacks?.({

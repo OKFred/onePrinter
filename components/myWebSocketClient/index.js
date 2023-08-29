@@ -3,11 +3,10 @@ import WebSocket from "websocket";
 // WebSocket 服务器地址
 let serverUrl = globalThis.envGetter("WEBSOCKET_SERVER_URL");
 
-// 创建 WebSocket 客户端
-let ws = new WebSocket.client();
-
 // 连接到 WebSocket 服务器
 async function onPostMessage(obj, callbacks) {
+    // 创建 WebSocket 客户端
+    let ws = new WebSocket.client();
     setTimeout(() => ws.connect(serverUrl, null), 0);
     let connection = await new Promise((resolve, reject) => {
         ws.on("connect", (connection) => {
@@ -15,6 +14,10 @@ async function onPostMessage(obj, callbacks) {
             // console.log("连接已建立!"+ serverUrl);
             resolve(connection);
             // 监听消息事件
+        });
+        ws.on("close", (reasonCode, description) => {
+            console.log("连接失败: " + reasonCode, description);
+            resolve(false);
         });
     });
     if (!connection) return callbacks?.({ success: false, message: "连接失败" });
