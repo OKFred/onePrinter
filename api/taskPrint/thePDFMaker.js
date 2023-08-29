@@ -48,13 +48,13 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
             y: 0, // 左上角y坐标
         }); */
         // 设置虚线样式
-        pdfDoc.dash(5, { space: 5 }); // 参数表示虚线段的长度和间距
+     /*    pdfDoc.dash(5, { space: 5 }); // 参数表示虚线段的长度和间距
         pdfDoc
             .moveTo(0, 23) // 起始坐标
             .lineTo(500, 23) // 结束坐标
             .stroke(); // 绘制线条
         // 重置虚线样式
-        pdfDoc.undash();
+        pdfDoc.undash(); */
 
         //const textArr = ["这是一个多行文本示例", "Trust AI technology", now];
 

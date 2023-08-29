@@ -84,7 +84,7 @@ async function onPrintPNG({ base64, relativePath = "", config } = {}, callbacks)
                     {
                         itemtype: "CPCL_AddLabel",
                         offset: 0,
-                        height: 400,
+                        height: 500,
                         qty: 1,
                     },
                     {
