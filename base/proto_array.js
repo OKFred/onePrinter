@@ -12,7 +12,7 @@
  * let arr = [0.1, 0.2];
  * arr.calc("+"); // 0.3
  */
-Array.prototype.calc = function (operator) {
+/* Array.prototype.calc = function (operator) {
     let arr = this;
     if (arr.length < 2) return undefined;
     let fn =
@@ -33,7 +33,7 @@ Array.prototype.calc = function (operator) {
     } //取出第一个值，遍历数组，依次计算
     result = safeNumber(result);
     return result;
-};
+}; */
 
 function add(x, y) {
     return x + y;

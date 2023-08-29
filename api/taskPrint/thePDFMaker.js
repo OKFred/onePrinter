@@ -22,7 +22,7 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
         return;
     }
     let relativePath = "/public/打印" + new Date().getTime() + ".pdf";
-    let pdfFilePath = path.join(process.cwd(), relativePath);
+    let absolutePath = path.join(process.cwd(), relativePath);
     let result = await new Promise((resolve, reject) => {
         const pdfDoc = new PDFDocument({
             font: path.join(__dirname, "黑体.ttf"),
@@ -32,7 +32,7 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
         });
 
         // 将PDF写入文件
-        const stream = pdfDoc.pipe(fs.createWriteStream(pdfFilePath));
+        const stream = pdfDoc.pipe(fs.createWriteStream(absolutePath));
         stream.on("finish", function () {
             let thisTime = new Date().toLocaleTimeString();
             console.log(thisTime, "PDF已就位");
@@ -40,7 +40,7 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
         });
 
         // 插入图片到PDF
-/*         pdfDoc.image(path.join(process.cwd(), "/public/logo.png"), {
+        /*         pdfDoc.image(path.join(process.cwd(), "/public/logo.png"), {
             fit: [25, 25], // 图片尺寸
             align: "left", // 图片对齐方式
             valign: "top", // 图片垂直对齐方式
@@ -68,7 +68,7 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
     });
     callbacks?.({
         success: result ? true : false,
-        data: { pdfFilePath: relativePath },
+        data: { relativePath },
         message: result ? "PDF文件已就位" : "PDF文件生成失败",
     });
 }
