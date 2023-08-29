@@ -48,7 +48,7 @@ async function onPostMessage(obj, callbacks) {
     connection.close();
     callbacks?.({
         success: result ? true : false,
-        data: { ...result, str },
+        data: { ...result },
         message: result ? "消息已发送" : "消息发送失败",
     });
 }

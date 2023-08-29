@@ -6,7 +6,7 @@ import http from "http";
 import app from "../components/myServer/index.js";
 import { onPostMessage } from "../components/myWebSocketClient/index.js";
 import { onNewPDF } from "./taskPrint/thePDFMaker.js";
-import { onNewPNG, onPrintPNG } from "./taskPrint/thePNGMaker.js";
+import { onNewPNG, onPrintPNG, onPrintNewPNG } from "./taskPrint/thePNGMaker.js";
 import { onPrinterInfo, onPrintPDF } from "./taskPrint/theUSBPrinter.js";
 
 async function main() {
@@ -27,6 +27,9 @@ async function main() {
     });
     app.post("/api/printer/printPNG", (req, res) => {
         onPrintPNG(req.body, (value) => res.json(value));
+    });
+    app.post("/api/printer/printNewPNG", (req, res) => {
+        onPrintNewPNG(req.body, (value) => res.json(value));
     });
     app.post("/api/printer/onPostMessage", (req, res) => {
         onPostMessage(req.body, (value) => res.json(value));
