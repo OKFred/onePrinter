@@ -4,6 +4,8 @@ import { fileURLToPath } from "url";
 import pdfkit from "pdfkit";
 
 let PDFDocument = pdfkit;
+let font_regular = "SourceHanSansCN-Regular.ttf";
+let font_bold = "SourceHanSansCN-Bold.ttf";
 //let now = new Date().toLocaleString();
 
 let __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,15 +26,15 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
     let relativePath = "/public/打印" + new Date().getTime() + ".pdf";
     let absolutePath = path.join(process.cwd(), relativePath);
     let result = await new Promise((resolve, reject) => {
-        const pdfDoc = new PDFDocument({
-            font: path.join(__dirname, "黑体.ttf"),
-            size: [4 * 72, 6 * 72], // 将英寸转换为点（1英寸 = 72点）
-            margin: { left: 0, right: 0, top: 0, bottom: 0 }, // 设置边距
+        let pdfDoc = new PDFDocument({
+            font: path.join(__dirname, font_regular),
+            size: [(80 * 72) / 25.4, (50 * 72) / 25.4], // 将 80mm 和 50mm 转换为英寸，并考虑了默认的 DPI 值（72）。
+            margins: { left: 0, right: 0, top: 0, bottom: 0 }, // 设置边距
             bufferPages: true, // 允许将页面保存在内存中，以便稍后写入文件
         });
 
         // 将PDF写入文件
-        const stream = pdfDoc.pipe(fs.createWriteStream(absolutePath));
+        let stream = pdfDoc.pipe(fs.createWriteStream(absolutePath));
         stream.on("finish", function () {
             let thisTime = new Date().toLocaleTimeString();
             console.log(thisTime, "PDF已就位");
@@ -48,7 +50,7 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
             y: 0, // 左上角y坐标
         }); */
         // 设置虚线样式
-     /*    pdfDoc.dash(5, { space: 5 }); // 参数表示虚线段的长度和间距
+        /*    pdfDoc.dash(5, { space: 5 }); // 参数表示虚线段的长度和间距
         pdfDoc
             .moveTo(0, 23) // 起始坐标
             .lineTo(500, 23) // 结束坐标
@@ -56,13 +58,32 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
         // 重置虚线样式
         pdfDoc.undash(); */
 
-        //const textArr = ["这是一个多行文本示例", "Trust AI technology", now];
+        //let textArr = ["这是一个多行文本示例", "Trust AI technology", now];
 
-        pdfDoc.moveUp(5); // 将绘图位置上移一个单位，相当于设置文本上边距为0
-        textArr.forEach((line) => {
-            pdfDoc.fontSize(12).text(line, { align: "center" });
-            pdfDoc.moveDown(0.5); // 设置最小间距，单位是行高
-        });
+        // pdfDoc.moveDown(0.5); // 将绘图位置下移一个单位
+        for (let textObj of textArr) {
+            if (typeof textObj !== "object") {
+                try {
+                    textObj = JSON.parse(textObj);
+                } catch (e) {}
+            }
+            let { value = "", style = {}, addPage } = textObj || {};
+            if (addPage) {
+                pdfDoc.addPage();
+                continue;
+            } // 手动添加新页面
+            if (typeof style !== "object") style = {};
+            style = { align: "center", height: 1, lineGap: 1, fontSize: 16, ...style };
+            if (style.fontWeight === "bold") pdfDoc.font(path.join(__dirname, font_bold));
+            else pdfDoc.font(path.join(__dirname, font_regular));
+            let textArgs = [value, style];
+            if (style["align"] === "right" && style["indent"]) {
+                let indent = Number(style["indent"]);
+                if (isNaN(indent)) indent = 0;
+                textArgs = [value, indent, pdfDoc["y"], style];
+            }
+            pdfDoc.fontSize(style["fontSize"] || 16).text(...textArgs);
+        }
         // 结束PDF文档
         pdfDoc.end();
     });

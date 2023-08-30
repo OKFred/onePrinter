@@ -6,7 +6,7 @@ import { onPostMessage } from "../../components/myWebSocketClient/index.js";
 export { onNewPNG, onPrintPNG, onPrintNewPNG };
 
 // 创建PNG图片
-async function onNewPNG({ relativePath = "", config } = {}, callbacks) {
+async function onNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
     if (!relativePath) {
         callbacks?.({
             success: false,
@@ -25,26 +25,30 @@ async function onNewPNG({ relativePath = "", config } = {}, callbacks) {
     let fileName = path.basename(absolutePath)?.replace(/\.pdf$/i, "");
     let imageBase = path.join(process.cwd(), "public", fileName);
     let result;
+    if (typeof config !== "object") {
+        try {
+            config = JSON.parse(config);
+        } catch (e) {
+            config = {};
+        }
+    }
     try {
         let args = [absolutePath];
-        if (config && typeof config === "object") args.push(config);
+        if (Object.keys(config).length > 0) args.push(config);
         let imageDataArr = await pdf2img.convert(...args);
         let i = 0;
-        if (config && config.base64) {
-            let base64DataArr = [];
+        result = [];
+        if (config.base64) {
             for (let imageData of imageDataArr) {
-                base64DataArr.push(imageData);
+                result.push(imageData);
                 i++;
-                break;
-            } //只取第一张图片
-            result = base64DataArr[0];
+            }
         } else {
             for (let imageData of imageDataArr) {
                 fs.writeFileSync(imageBase + `_${i}.png`, imageData);
+                result.push("/public/" + fileName + `_${i}.png`);
                 i++;
-                break;
             }
-            result = "/public/" + fileName + `_0.png`;
         }
     } catch (error) {
         console.log(error);
@@ -52,14 +56,14 @@ async function onNewPNG({ relativePath = "", config } = {}, callbacks) {
     }
     callbacks?.({
         success: result ? true : false,
-        data: { relativePath: result },
+        data: { relativePathArr: result },
         message: result ? "PNG文件已就位" : "PNG文件生成失败",
     });
     return result;
 }
 
 // 打印PNG图片
-async function onPrintPNG({ base64, relativePath = "", config } = {}, callbacks) {
+async function onPrintPNG({ base64, relativePath = "", config = {} } = {}, callbacks) {
     if (!relativePath && !base64) {
         callbacks?.({
             success: false,
@@ -75,40 +79,77 @@ async function onPrintPNG({ base64, relativePath = "", config } = {}, callbacks)
     }
     let imageString = `data:image/png;base64,${base64}`;
     let obj = {
-        model: "HM-A300",
-        printerID: "CPCL",
+        model: "HT300",
+        printerID: "TSPL",
         interface: "USB",
         printers: [
             {
                 Items: [
                     {
-                        itemtype: "CPCL_AddLabel",
-                        offset: 0,
-                        height: 500,
-                        qty: 1,
+                        itemtype: "TSPL_ClearBuffer",
                     },
                     {
-                        itemtype: "CPCL_AddImage",
-                        rotate: 0,
+                        itemtype: "TSPL_Setup",
+                        labelWidth: 80,
+                        labelheight: 50,
+                        speed: 2,
+                        density: 6,
+                        type: 1,
+                        gap: 0,
+                        offset: 0,
+                    },
+                    {
+                        itemtype: "TSPL_BitMap",
                         xPos: 0,
                         yPos: 0,
-                        imagePath: imageString,
+                        mode: 0,
+                        fileName: imageString,
                     },
                     {
-                        itemtype: "CPCL_Print",
+                        itemtype: "TSPL_Print",
+                        num: 1,
+                        copies: 1,
                     },
                 ],
             },
         ],
     };
-    if (config && config.quantity) obj.printers[0].Items[0].qty = config.quantity; //打印份数
-    onPostMessage(obj, callbacks);
+    if (typeof config !== "object") {
+        try {
+            config = JSON.parse(config);
+        } catch (e) {
+            config = {};
+        }
+    }
+    if (config.quantity) obj.printers[0].Items[2].copies = config.quantity; //打印份数
+    return await onPostMessage(obj, callbacks);
 }
 
-async function onPrintNewPNG({ relativePath = "", config } = {}, callbacks) {
-    config = config || {};
+async function onPrintNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
+    if (typeof config !== "object") {
+        try {
+            config = JSON.parse(config);
+        } catch (e) {
+            config = {};
+        }
+    }
     config.base64 = true;
-    let base64 = await onNewPNG({ relativePath, config });
-    if (!base64) return callbacks?.({ success: false, data: null, message: "打印失败" });
-    onPrintPNG({ base64, config }, callbacks);
+    let base64Arr = await onNewPNG({ relativePath, config });
+    if (!base64Arr || !base64Arr.length) {
+        return callbacks?.({ success: false, data: null, message: "打印失败" });
+    }
+    let try_count = 0;
+    let success_count = 0;
+    let _callbacks = ({ success }) => {
+        if (success) success_count++;
+    };
+    for (let base64 of base64Arr) {
+        try_count++;
+        await onPrintPNG({ base64, config }, _callbacks);
+    }
+    if (success_count === 0) return callbacks({ success: false, message: "打印任务失败" });
+    else if (success_count < try_count) {
+        return callbacks({ success: false, message: "部分打印任务失败" });
+    }
+    return callbacks({ success: false, message: "打印任务成功" });
 }
