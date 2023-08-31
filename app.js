@@ -21,6 +21,13 @@ PORT=9009
 printerURL=
 sessionSecret=
 WEBSOCKET_SERVER_URL=ws://127.0.0.1:9099/
+
+# 打印机语言
+printerID=CPCL
+
+# 纸张大小设置
+printerPaperWidth=80
+printerPaperHeight=50
 `,
         );
         console.log("🚩首次加载，请配置目录下的.env");

@@ -3,13 +3,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 import pdfkit from "pdfkit";
 
+let __dirname = path.dirname(fileURLToPath(import.meta.url)); //当前目录
 let PDFDocument = pdfkit;
 let font_regular = "SourceHanSansCN-Regular.ttf";
 let font_bold = "SourceHanSansCN-Bold.ttf";
-//let now = new Date().toLocaleString();
 
-let __dirname = path.dirname(fileURLToPath(import.meta.url));
-// console.log("当前目录：", __dirname);
+let printerPaperWidth = globalThis.envGetter("printerPaperWidth");
+let printerPaperHeight = globalThis.envGetter("printerPaperHeight");
 
 export { onNewPDF };
 
@@ -28,7 +28,7 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
     let result = await new Promise((resolve, reject) => {
         let pdfDoc = new PDFDocument({
             font: path.join(__dirname, font_regular),
-            size: [(80 * 72) / 25.4, (50 * 72) / 25.4], // 将 80mm 和 50mm 转换为英寸，并考虑了默认的 DPI 值（72）。
+            size: [(printerPaperWidth * 72) / 25.4, (printerPaperHeight * 72) / 25.4], // 将 mm 转换为英寸，并考虑了默认的 DPI 值（72）。
             margins: { left: 0, right: 0, top: 0, bottom: 0 }, // 设置边距
             bufferPages: true, // 允许将页面保存在内存中，以便稍后写入文件
         });
@@ -58,7 +58,18 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
         // 重置虚线样式
         pdfDoc.undash(); */
 
-        //let textArr = ["这是一个多行文本示例", "Trust AI technology", now];
+/*         let textArr = [
+            { value: "这是一个多行文本示例" },
+            {
+                value: "红美人西瓜1个",
+                style: {
+                    align: "left",
+                    indent: 50,
+                    fontWeight: "bold",
+                    fontSize: 14,
+                },
+            },
+        ]; */
 
         // pdfDoc.moveDown(0.5); // 将绘图位置下移一个单位
         for (let textObj of textArr) {

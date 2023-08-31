@@ -3,6 +3,8 @@ import path from "path";
 import * as pdf2img from "pdf-img-convert";
 import { onPostMessage } from "../../components/myWebSocketClient/index.js";
 
+let printerID = globalThis.envGetter("printerID");
+
 export { onNewPNG, onPrintPNG, onPrintNewPNG };
 
 // 创建PNG图片
@@ -78,42 +80,80 @@ async function onPrintPNG({ base64, relativePath = "", config = {} } = {}, callb
         base64 = fileBuffer.toString("base64");
     }
     let imageString = `data:image/png;base64,${base64}`;
-    let obj = {
-        model: "HT300",
-        printerID: "TSPL",
-        interface: "USB",
-        printers: [
-            {
-                Items: [
-                    {
-                        itemtype: "TSPL_ClearBuffer",
-                    },
-                    {
-                        itemtype: "TSPL_Setup",
-                        labelWidth: 80,
-                        labelheight: 50,
-                        speed: 2,
-                        density: 6,
-                        type: 1,
-                        gap: 0,
-                        offset: 0,
-                    },
-                    {
-                        itemtype: "TSPL_BitMap",
-                        xPos: 0,
-                        yPos: 0,
-                        mode: 0,
-                        fileName: imageString,
-                    },
-                    {
-                        itemtype: "TSPL_Print",
-                        num: 1,
-                        copies: 1,
-                    },
-                ],
-            },
-        ],
-    };
+    let obj;
+    if (printerID === "TSPL") {
+        obj = {
+            model: "HT300",
+            printerID: "TSPL",
+            interface: "USB",
+            printers: [
+                {
+                    Items: [
+                        {
+                            itemtype: "TSPL_ClearBuffer",
+                        },
+                        {
+                            itemtype: "TSPL_Setup",
+                            labelWidth: 80,
+                            labelheight: 50,
+                            speed: 2,
+                            density: 6,
+                            type: 1,
+                            gap: 0,
+                            offset: 0,
+                        },
+                        {
+                            itemtype: "TSPL_BitMap",
+                            xPos: 0,
+                            yPos: 0,
+                            mode: 0,
+                            fileName: imageString,
+                        },
+                        {
+                            itemtype: "TSPL_Print",
+                            num: 1,
+                            copies: 1,
+                        },
+                    ],
+                },
+            ],
+        };
+    } else if (printerID === "CPCL") {
+        obj = {
+            model: "HM-A300",
+            printerID: "CPCL",
+            interface: "USB",
+            printers: [
+                {
+                    Items: [
+                        {
+                            itemtype: "CPCL_AddLabel",
+                            offset: 0,
+                            height: 500,
+                            qty: 1,
+                        },
+                        {
+                            itemtype: "CPCL_AddImage",
+                            rotate: 0,
+                            xPos: 0,
+                            yPos: 0,
+                            imagePath: imageString,
+                        },
+                        {
+                            itemtype: "CPCL_Print",
+                        },
+                    ],
+                },
+            ],
+        };
+    } else {
+        callbacks?.({
+            success: false,
+            data: null,
+            message: "未定义打印语言",
+        });
+        return;
+    }
     if (typeof config !== "object") {
         try {
             config = JSON.parse(config);
