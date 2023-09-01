@@ -6,6 +6,7 @@ import http from "http";
 import app from "../components/myServer/index.js";
 import { onPostMessage } from "../components/myWebSocketClient/index.js";
 import { onNewPDF } from "./taskPrint/thePDFMaker.js";
+import { onUpload } from "./taskPrint/theUploader.js";
 import { onNewPNG, onPrintPNG, onPrintNewPNG } from "./taskPrint/thePNGMaker.js";
 import { onPrinterInfo, onPrintPDF } from "./taskPrint/theUSBPrinter.js";
 
@@ -15,6 +16,9 @@ async function main() {
     });
     app.get("/api/printer/printerInfo", (req, res) => {
         onPrinterInfo(req.query, (value) => res.json(value));
+    });
+    app.post("/api/printer/uploadPDF", (req, res) => {
+        onUpload(req.files, (value) => res.json(value));
     });
     app.post("/api/printer/makePDF", (req, res) => {
         onNewPDF(req.body, (value) => res.json(value));
@@ -31,7 +35,7 @@ async function main() {
     app.post("/api/printer/printNewPNG", (req, res) => {
         onPrintNewPNG(req.body, (value) => res.json(value));
     });
-    app.post("/api/printer/onPostMessage", (req, res) => {
+    app.post("/api/printer/postMessage", (req, res) => {
         onPostMessage(req.body, (value) => res.json(value));
     });
     let httpServer = http.createServer(app);

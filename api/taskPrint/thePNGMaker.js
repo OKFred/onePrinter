@@ -191,5 +191,5 @@ async function onPrintNewPNG({ relativePath = "", config = {} } = {}, callbacks)
     else if (success_count < try_count) {
         return callbacks({ success: false, message: "部分打印任务失败" });
     }
-    return callbacks({ success: false, message: "打印任务成功" });
+    return callbacks({ success: true, message: "打印任务成功" });
 }
