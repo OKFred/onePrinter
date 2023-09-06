@@ -4,11 +4,12 @@
  */
 import http from "http";
 import app from "../components/myServer/index.js";
+
 import { onPostMessage } from "../components/myWebSocketClient/index.js";
-import { onNewPDF } from "./taskPrint/thePDFMaker.js";
-import { onUpload } from "./taskPrint/theUploader.js";
-import { onNewPNG, onPrintPNG, onPrintNewPNG } from "./taskPrint/thePNGMaker.js";
-import { onPrinterInfo, onPrintPDF } from "./taskPrint/theUSBPrinter.js";
+import { onNewPDF } from "./taskPrinter/thePDFMaker.js";
+import { onUpload } from "./taskPrinter/theUploader.js";
+import { onNewPNG, onPrintPNG, onPrintNewPNG } from "./taskPrinter/thePNGMaker.js";
+import { onPrinterInfo, onPrintPDF } from "./taskPrinter/theUSBPrinter.js";
 
 async function main() {
     app.all("/", (req, res) => {
