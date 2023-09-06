@@ -20,18 +20,20 @@ export { onWriteQuery, onReadQuery };
  */
 async function onWriteQuery(dataObj = {}, callbacks) {
     // dataObj = { plcAddress: "127.0.0.1", rack: 16, slot: 1, startByte: 1400 };
+    dataObj.queryTime = new Date().valueOf();
     let mapArr = [
         { label: "PLC的IP地址", key: "plcAddress" },
         { label: "机架号", key: "rack" },
         { label: "插槽号", key: "slot" },
         { label: "起始字节", key: "startByte" },
+        { label: "温度", key: "temperature" },
         { label: "查询时间", key: "queryTime" },
     ];
     for (let i = 0; i < mapArr.length; i++) {
         let { key, value } = mapArr[i];
         if (String(value).isNull()) value = dataObj[key];
         if (String(value).isNull()) {
-            return console.log?.({ success: false, message: "参数错误, " + key + " 不能为空" });
+            return callbacks?.({ success: false, message: "参数错误, " + key + " 不能为空" });
         }
         mapArr[i].value = value;
     }
@@ -45,6 +47,7 @@ async function onWriteQuery(dataObj = {}, callbacks) {
     );
     let isSuccess = result[0].affectedRows === 1;
     callbacks?.({ success: isSuccess, message: isSuccess ? "写入成功" : "写入失败" });
+    return isSuccess;
 }
 
 /**

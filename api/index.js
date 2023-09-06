@@ -18,16 +18,16 @@ async function main() {
         res.send("hello there!\n今天是" + new Date() + JSON.stringify(req.headers));
     });
     app.post("/api/plc/newTask", (req, res) => {
-        onNewTask(req.query, (value) => res.json(value));
+        onNewTask(req.body, (value) => res.json(value));
     });
     app.post("/api/plc/endTask", (req, res) => {
-        onEndTask(req.query, (value) => res.json(value));
+        onEndTask(req.body, (value) => res.json(value));
     });
     app.get("/api/plc/getAllTasks", (req, res) => {
         onGetAllTasks(req.headers, (value) => res.json(value));
     });
     app.post("/api/plc/readQuery", (req, res) => {
-        onReadQuery(req.query, (value) => res.json(value));
+        onReadQuery(req.body, (value) => res.json(value));
     });
     app.get("/api/printer/printerInfo", (req, res) => {
         onPrinterInfo(req.query, (value) => res.json(value));

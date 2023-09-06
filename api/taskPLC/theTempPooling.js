@@ -34,7 +34,14 @@ async function onNewTask(
     } = {},
     callbacks,
 ) {
-    if (!plcAddress || !rack || !slot || !startByte) {
+    [rack, slot, startByte] = [rack, slot, startByte].map((item) => Number(item));
+    if (
+        [rack, slot, startByte].some((item) => isNaN(item)) ||
+        !plcAddress ||
+        !rack ||
+        !slot ||
+        !startByte
+    ) {
         callbacks?.({
             success: false,
             data: null,
@@ -51,15 +58,15 @@ async function onNewTask(
         });
         return;
     }
-    let temp = await startTask({ area, dbNumber, startByte, length, wordLength });
-    if (!temp) {
+    let temperature = await client.startTask({ area, dbNumber, startByte, length, wordLength });
+    if (!temperature) {
         return callbacks?.({
             success: false,
             data: null,
             message: "读取失败",
         });
     }
-    let result = await onWriteQuery({ plcAddress, rack, slot, startByte, temp });
+    let result = await onWriteQuery({ plcAddress, rack, slot, startByte, temperature });
     if (!result) {
         return callbacks?.({
             success: false,
@@ -73,15 +80,15 @@ async function onNewTask(
     }
     console.log("🚀启动PLC任务");
     taskRegisterObj[key] = setInterval(async () => {
-        let temp = await startTask({ area, dbNumber, startByte, length, wordLength });
-        if (!temp) return;
-        let result = await onWriteQuery({ plcAddress, rack, slot, startByte, temp });
+        let temperature = await client.startTask({ area, dbNumber, startByte, length, wordLength });
+        if (temperature === false) return;
+        let result = await onWriteQuery({ plcAddress, rack, slot, startByte, temperature });
         if (!result) return;
     }, 60 * 1000); // 60秒执行一次
     callbacks?.({
         success: true,
         data: key,
-        message: "读取成功",
+        message: "任务安排成功",
     });
 }
 
@@ -91,7 +98,7 @@ async function onNewTask(
  * @param {String} obj.key 任务的key
  * @returns {Promise}
  * */
-async function onEndTask({ key = "", callbacks } = {}) {
+async function onEndTask({ key = "" } = {}, callbacks) {
     if (!key) return callbacks?.({ success: false, message: "参数错误" });
     if (taskRegisterObj[key]) {
         clearInterval(taskRegisterObj[key]);
@@ -109,7 +116,7 @@ async function onEndTask({ key = "", callbacks } = {}) {
  * @param {String} obj.token token
  * @returns {Promise}
  * */
-async function onGetAllTasks({ token, callbacks } = {}) {
+async function onGetAllTasks({ token } = {}, callbacks) {
     if (token !== freezerTaskToken) {
         return callbacks?.({
             success: false,
@@ -133,16 +140,22 @@ async function onGetAllTasks({ token, callbacks } = {}) {
  * @returns {Promise}
  */
 async function startClient({ plcAddress = "127.0.0.1", rack = 16, slot = 1 } = {}) {
-    let _client = new nodeSnap7.S7Client();
+    let client = new nodeSnap7.S7Client();
     return new Promise((resolve, reject) => {
-        _client.ConnectTo(plcAddress, rack, slot, (err) => {
-            if (err) {
-                console.log("连接失败");
-                return resolve(false);
-            }
-            console.log(new Date().toLocaleString(), "连接成功");
-            resolve(_client);
-        });
+        try {
+            client.ConnectTo(plcAddress, rack, slot, (err) => {
+                if (err) {
+                    console.log(new Date().toLocaleString(), "连接失败", err.message);
+                    return resolve(false);
+                }
+                console.log(new Date().toLocaleString(), "连接成功");
+                client.startTask = startTask;
+                resolve(client);
+            });
+        } catch (e) {
+            console.log(new Date().toLocaleString(), "连接失败", e.message);
+            return resolve(false);
+        }
     });
 }
 
@@ -163,18 +176,20 @@ async function startTask({
     length = 4,
     wordLength = 0x04,
 } = {}) {
+    let client = this;
     // 使用 ReadArea 方法来读取 VD1400 的数据
     return new Promise((resolve, reject) => {
         client.ReadArea(area, dbNumber, startByte, length, wordLength, (err, res) => {
             if (err) {
-                console.log("读取失败", err);
+                console.log(new Date().toLocaleString(), "读取失败", err);
                 return resolve(false);
             }
             let buf = Buffer.from(res);
-            let temp = buf.readFloatBE(0); //32位浮点数 转换成摄氏度
-            temp = temp.toFixed(2); //保留两位小数
-            // console.log(new Date().toLocaleString(), "温度", temp + "℃");
-            resolve(temp);
+            let temperature = buf.readFloatBE(0); //32位浮点数 转换成摄氏度
+            temperature = temperature.toFixed(2); //保留两位小数
+            // console.log(new Date().toLocaleString(), "温度", temperature + "℃");
+            temperature = Number(temperature);
+            resolve(temperature);
         });
     });
 }
