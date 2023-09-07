@@ -26,6 +26,16 @@
 
 出参：{ "message": "", "success": "" }
 
+## 批量创建 PLC 轮询任务
+
+POST
+
+路径：/api/plc/startAllTasks
+
+入参：{ "token": "" } 令牌(headers)
+
+出参：{ "message": "", "success": "" } 任务列表
+
 ## 获取 PLC 轮询任务列表
 
 方法：GET

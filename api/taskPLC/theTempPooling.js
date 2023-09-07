@@ -26,6 +26,13 @@ function prepare() {
         console.log(
             "todo.json文件不存在或格式错误，已创建空文件，请配置以便`onStartAllTasks`函数正常工作",
         );
+        console.log(`参考格式如下：`, {
+            id: 1,
+            freezerName: "1#冷库",
+            doorName: "1#门库温度",
+            plcAddress: "192.168.1.2",
+            startByte: 1400,
+        });
         fs.writeFileSync(filePath, "[]", "utf-8");
     }
     return todoArr;
