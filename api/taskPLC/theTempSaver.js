@@ -19,7 +19,7 @@ export { onWriteQuery, onReadQuery };
  * @returns {Promise}
  */
 async function onWriteQuery(dataObj = {}, callbacks) {
-    // dataObj = { plcAddress: "127.0.0.1", rack: 16, slot: 1, startByte: 1400 };
+    // dataObj = { plcAddress: "127.0.0.1", rack: 8, slot: 0, startByte: 1400 };
     dataObj.queryTime = new Date().valueOf();
     let mapArr = [
         { label: "PLC的IP地址", key: "plcAddress" },

@@ -39,7 +39,6 @@ async function onNewTask(
         [rack, slot, startByte].some((item) => isNaN(item)) ||
         !plcAddress ||
         !rack ||
-        !slot ||
         !startByte
     ) {
         callbacks?.({
@@ -139,7 +138,7 @@ async function onGetAllTasks({ token } = {}, callbacks) {
  * @param {Number} obj.slot 插槽号
  * @returns {Promise}
  */
-async function startClient({ plcAddress = "127.0.0.1", rack = 16, slot = 1 } = {}) {
+async function startClient({ plcAddress = "127.0.0.1", rack = 8, slot = 0 } = {}) {
     let client = new nodeSnap7.S7Client();
     return new Promise((resolve, reject) => {
         try {
