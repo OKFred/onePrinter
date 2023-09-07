@@ -1,12 +1,36 @@
 // nodejs with s7 200 smart plc, using es module
 
+import fs from "fs";
+import path from "path";
+import url from "url";
 import nodeSnap7 from "node-snap7";
 import { onWriteQuery } from "./theTempSaver.js";
+// import todoArr from "todo.json" assert { type: "json" };
 
 let freezerTaskToken = globalThis.envGetter("freezerTaskToken") || "";
 let taskRegisterObj = {};
+let __dirname = path.dirname(url.fileURLToPath(import.meta.url)); //当前目录
 
-export { onNewTask, onEndTask, onGetAllTasks };
+export { onNewTask, onEndTask, onStartAllTasks, onGetAllTasks };
+
+/**
+ * 准备工作
+ * */
+function prepare() {
+    let todoArr = [];
+    try {
+        let filePath = path.join(__dirname, "todo.json");
+        todoArr = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    } catch (e) {
+        console.log(e);
+        console.log(
+            "todo.json文件不存在或格式错误，已创建空文件，请配置以便`onStartAllTasks`函数正常工作",
+        );
+        fs.writeFileSync(filePath, "[]", "utf-8");
+    }
+    return todoArr;
+}
+prepare();
 
 /**
  * 启动任务
@@ -24,7 +48,7 @@ export { onNewTask, onEndTask, onGetAllTasks };
 async function onNewTask(
     {
         plcAddress = "",
-        rack = 0,
+        rack = 8,
         slot = 0,
         area = 0x84,
         dbNumber = 1,
@@ -34,20 +58,15 @@ async function onNewTask(
     } = {},
     callbacks,
 ) {
-    [rack, slot, startByte] = [rack, slot, startByte].map((item) => Number(item));
-    if (
-        [rack, slot, startByte].some((item) => isNaN(item)) ||
-        !plcAddress ||
-        !rack ||
-        !startByte
-    ) {
+    [rack, slot, startByte] = [rack, slot, startByte].map((obj) => Number(obj));
+    if ([rack, slot, startByte].some((obj) => isNaN(obj)) || !plcAddress || !rack || !startByte) {
         callbacks?.({
             success: false,
             data: null,
             message: "参数错误",
         });
-        return;
-    }
+        return false;
+    } //判断格式和非空
     let client = await startClient({ plcAddress, rack, slot });
     if (!client) {
         callbacks?.({
@@ -55,23 +74,25 @@ async function onNewTask(
             data: null,
             message: "连接失败",
         });
-        return;
+        return false;
     }
     let temperature = await client.startTask({ area, dbNumber, startByte, length, wordLength });
     if (!temperature) {
-        return callbacks?.({
+        callbacks?.({
             success: false,
             data: null,
             message: "读取失败",
         });
+        return false;
     }
     let result = await onWriteQuery({ plcAddress, rack, slot, startByte, temperature });
     if (!result) {
-        return callbacks?.({
+        callbacks?.({
             success: false,
             data: null,
             message: "写入失败",
         });
+        return false;
     }
     let key = `${plcAddress}-${rack}-${slot}-${startByte}`;
     if (taskRegisterObj[key]) {
@@ -79,6 +100,8 @@ async function onNewTask(
     }
     console.log("🚀启动PLC任务");
     taskRegisterObj[key] = setInterval(async () => {
+        let client = await startClient({ plcAddress, rack, slot });
+        if (client === false) return console.log("当前任务：", key);
         let temperature = await client.startTask({ area, dbNumber, startByte, length, wordLength });
         if (temperature === false) return;
         let result = await onWriteQuery({ plcAddress, rack, slot, startByte, temperature });
@@ -89,6 +112,7 @@ async function onNewTask(
         data: key,
         message: "任务安排成功",
     });
+    return true;
 }
 
 /**
@@ -110,6 +134,41 @@ async function onEndTask({ key = "" } = {}, callbacks) {
 }
 
 /**
+ * 启动所有任务
+ * @param {Object} obj
+ * @param {String} obj.token token
+ * @returns {Promise}
+ * */
+async function onStartAllTasks({ token } = {}, callbacks) {
+    if (token !== freezerTaskToken) {
+        return callbacks?.({
+            success: false,
+            data: null,
+            message: "token错误",
+        });
+    }
+    let todoArr = prepare();
+    let try_count = 0;
+    let success_count = 0;
+    let _callbacks = ({ success }) => {
+        if (success) success_count++;
+    };
+    console.log("总任务数：", todoArr.length);
+    for (let { id, freezerName, doorName, plcAddress, startByte } of todoArr) {
+        try_count++;
+        console.log("当前任务：", id, freezerName, doorName);
+        await onNewTask({ plcAddress, startByte }, _callbacks);
+        // await globalThis.sleep(1000); //等待1秒
+    }
+    if (success_count === 0) return callbacks({ success: false, message: "轮询任务创建失败" });
+    else if (success_count < try_count) {
+        console.log("成功数", success_count);
+        return callbacks({ success: false, message: "部分轮询任务创建失败" });
+    }
+    return callbacks({ success: true, message: "轮询任务创建成功" });
+}
+
+/**
  * 获取所有任务
  * @param {Object} obj
  * @param {String} obj.token token
@@ -123,9 +182,20 @@ async function onGetAllTasks({ token } = {}, callbacks) {
             message: "token错误",
         });
     }
+    let keyArr = Object.keys(taskRegisterObj);
+    let todoArr = prepare();
+    let mappingArr = keyArr.map((key) => {
+        let [plcAddress, rack, slot, startByte] = key.split("-");
+        let { id, freezerName, doorName } =
+            todoArr.find(
+                (obj) => obj.plcAddress === plcAddress && obj.startByte === Number(startByte),
+            ) || {};
+        return { id, freezerName, doorName, plcAddress, rack, slot, startByte };
+    });
+    let filteredArr = mappingArr.filter((obj) => obj.id);
     callbacks?.({
         success: true,
-        data: Object.keys(taskRegisterObj),
+        data: filteredArr,
         message: "获取成功",
     });
 }
@@ -181,6 +251,7 @@ async function startTask({
         client.ReadArea(area, dbNumber, startByte, length, wordLength, (err, res) => {
             if (err) {
                 console.log(new Date().toLocaleString(), "读取失败", err);
+                client.Disconnect(); //查询完即断开连接，避免占用资源
                 return resolve(false);
             }
             let buf = Buffer.from(res);
@@ -188,6 +259,7 @@ async function startTask({
             temperature = temperature.toFixed(2); //保留两位小数
             // console.log(new Date().toLocaleString(), "温度", temperature + "℃");
             temperature = Number(temperature);
+            client.Disconnect(); //查询完即断开连接，避免占用资源
             resolve(temperature);
         });
     });

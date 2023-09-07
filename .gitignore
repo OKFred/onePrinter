@@ -3,6 +3,7 @@ node_modules
 /dist
 /mtk/url.js
 /src/wxcomponents
+todo.json
  
 # local env files
 .env.local

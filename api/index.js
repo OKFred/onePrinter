@@ -10,7 +10,7 @@ import { onUpload } from "./taskPrinter/theUploader.js";
 import { onNewPNG, onPrintPNG, onPrintNewPNG } from "./taskPrinter/thePNGMaker.js";
 import { onPrinterInfo, onPrintPDF } from "./taskPrinter/theUSBPrinter.js";
 
-import { onNewTask, onEndTask, onGetAllTasks } from "./taskPLC/theTempPooling.js";
+import { onNewTask, onEndTask, onStartAllTasks, onGetAllTasks } from "./taskPLC/theTempPooling.js";
 import { onReadQuery } from "./taskPLC/theTempSaver.js";
 
 async function main() {
@@ -22,6 +22,9 @@ async function main() {
     });
     app.post("/api/plc/endTask", (req, res) => {
         onEndTask(req.body, (value) => res.json(value));
+    });
+    app.post("/api/plc/startAllTasks", (req, res) => {
+        onStartAllTasks(req.headers, (value) => res.json(value));
     });
     app.get("/api/plc/getAllTasks", (req, res) => {
         onGetAllTasks(req.headers, (value) => res.json(value));

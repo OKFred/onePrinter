@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import url from "url";
 import pdfkit from "pdfkit";
 
-let __dirname = path.dirname(fileURLToPath(import.meta.url)); //当前目录
+let __dirname = path.dirname(url.fileURLToPath(import.meta.url)); //当前目录
 let PDFDocument = pdfkit;
 let font_regular = "SourceHanSansCN-Regular.ttf";
 let font_bold = "SourceHanSansCN-Bold.ttf";
@@ -58,7 +58,7 @@ async function onNewPDF({ textArr = [] } = {}, callbacks) {
         // 重置虚线样式
         pdfDoc.undash(); */
 
-/*         let textArr = [
+        /*         let textArr = [
             { value: "这是一个多行文本示例" },
             {
                 value: "红美人西瓜1个",
