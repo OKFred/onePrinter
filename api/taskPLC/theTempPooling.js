@@ -153,13 +153,13 @@ async function onStartAllTasks({ token } = {}, callbacks) {
     let _callbacks = ({ success }) => {
         if (success) success_count++;
     };
-    console.log("总任务数：", todoArr.length);
     for (let { id, freezerName, doorName, plcAddress, startByte } of todoArr) {
         try_count++;
         console.log("当前任务：", id, freezerName, doorName);
         await onNewTask({ plcAddress, startByte }, _callbacks);
         // await globalThis.sleep(1000); //等待1秒
     }
+    console.log("总任务数：", todoArr.length);
     if (success_count === 0) return callbacks({ success: false, message: "轮询任务创建失败" });
     else if (success_count < try_count) {
         console.log("成功数", success_count);
