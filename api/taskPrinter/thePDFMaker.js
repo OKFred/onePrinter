@@ -13,6 +13,20 @@ let printerPaperHeight = globalThis.envGetter("printerPaperHeight");
 
 export { onNewPDF };
 
+//准备工作
+function prepare() {
+    if (!fs.existsSync("public")) {
+        fs.mkdirSync("public");
+        console.log("未配置public目录，已自动生成");
+    }
+    let uploadFolderPath = path.join("public", "uploads");
+    if (!fs.existsSync(uploadFolderPath)) {
+        fs.mkdirSync(uploadFolderPath);
+        console.log("未配置public/uploads目录，已自动生成");
+    }
+}
+prepare();
+
 // 创建PDF文档
 async function onNewPDF({ textArr = [] } = {}, callbacks) {
     if (!textArr || !Array.isArray(textArr) || !textArr.length) {
