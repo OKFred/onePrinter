@@ -28,7 +28,17 @@ function prepare() {
 prepare();
 
 // 创建PDF文档
-async function onNewPDF({ textArr = [], paperWidth = "", paperHeight = "" } = {}, callbacks) {
+async function onNewPDF(
+    {
+        textArr = [],
+        paperWidth = "",
+        paperHeight = "",
+        tableColumnArr,
+        tableRowArr,
+        globalStyle,
+    } = {},
+    callbacks,
+) {
     if (!textArr || !Array.isArray(textArr) || !textArr.length) {
         callbacks?.({
             success: false,
@@ -60,92 +70,299 @@ async function onNewPDF({ textArr = [], paperWidth = "", paperHeight = "" } = {}
 
         // 插入图片到PDF
         /*         pdfDoc.image(path.join(process.cwd(), "/public/logo.png"), {
-            fit: [25, 25], // 图片尺寸
-            align: "left", // 图片对齐方式
-            valign: "top", // 图片垂直对齐方式
-            x: 50, // 左上角x坐标
-            y: 0, // 左上角y坐标
-        }); */
+        fit: [25, 25], // 图片尺寸
+        align: "left", // 图片对齐方式
+        valign: "top", // 图片垂直对齐方式
+        x: 50, // 左上角x坐标
+        y: 0, // 左上角y坐标
+    }); */
         // 设置虚线样式
         /*    pdfDoc.dash(5, { space: 5 }); // 参数表示虚线段的长度和间距
-        pdfDoc
-            .moveTo(0, 23) // 起始坐标
-            .lineTo(500, 23) // 结束坐标
-            .stroke(); // 绘制线条
-        // 重置虚线样式
-        pdfDoc.undash(); */
+    pdfDoc
+        .moveTo(0, 23) // 起始坐标
+        .lineTo(500, 23) // 结束坐标
+        .stroke(); // 绘制线条
+    // 重置虚线样式
+    pdfDoc.undash(); */
 
         /*         let textArr = [
-            { value: "这是一个多行文本示例" },
-            {
-                value: "红美人西瓜1个",
-                style: {
-                    align: "left",
-                    indent: 50,
-                    fontWeight: "bold",
-                    fontSize: 14,
-                },
+        { value: "这是一个多行文本示例" },
+        {
+            value: "红美人西瓜1个",
+            style: {
+                align: "left",
+                indent: 50,
+                fontWeight: "bold",
+                fontSize: 14,
             },
-        ]; */
+        },
+    ]; */
 
         // pdfDoc.moveDown(0.5); // 将绘图位置下移一个单位
-        for (let textObj of textArr) {
-            if (typeof textObj !== "object") {
-                try {
-                    textObj = JSON.parse(textObj);
-                } catch (e) {}
-            }
-            let { value = "", style = {}, addPage } = textObj || {};
-            if (addPage) {
-                pdfDoc.addPage();
-                continue;
-            } // 手动添加新页面
-            if (typeof style !== "object") style = {};
-            style = { align: "center", height: 1, lineGap: 1, fontSize: 16, ...style };
-            if (style.fontWeight === "bold") pdfDoc.font(path.join(__dirname, font_bold));
-            else pdfDoc.font(path.join(__dirname, font_regular));
-            let textArgs = [value, style];
-            if (style["align"] === "right" && style["indent"]) {
-                let indent = Number(style["indent"]);
-                if (isNaN(indent)) indent = 0;
-                textArgs = [value, indent, pdfDoc["y"], style];
-            }
-            pdfDoc.fontSize(style["fontSize"] || 16).text(...textArgs);
+        if (textArr) {
+            makePDFParagraph({ doc, textArr, globalStyle });
         }
+        if (tableColumnArr && tableRowArr) {
+            makePDFTable({ doc, tableColumnArr, tableRowArr, globalStyle });
+        } // 绘制表格
+        // 结束PDF文档
+        pdfDoc.end();
+    });
+    callbacks?.({
+        success: result ? true : false,
+        data: { relativePath },
+        message: result ? "PDF文件已就位" : "PDF文件生成失败",
+    });
+}
 
-        // 获取页面的宽度
-        let pageWidth = doc.page.width;
-        let pageHeight = doc.page.height;
+function makePDFParagraph({ doc, textArr, globalStyle = {} } = {}) {
+    for (let textObj of textArr) {
+        if (typeof textObj !== "object") {
+            try {
+                textObj = JSON.parse(textObj);
+            } catch (e) {}
+        }
+        let { value = "", style = {}, addPage } = textObj || {};
+        if (addPage) {
+            doc.addPage();
+            continue;
+        } // 手动添加新页面
+        if (typeof style !== "object") style = {};
+        style = { align: "center", height: 1, lineGap: 1, fontSize: 16, ...style };
+        if (style.fontWeight === "bold") doc.font(path.join(__dirname, font_bold));
+        else doc.font(path.join(__dirname, font_regular));
+        let textArgs = [value, style];
+        if (style["align"] === "right" && style["indent"]) {
+            let indent = Number(style["indent"]);
+            if (isNaN(indent)) indent = 0;
+            textArgs = [value, indent, doc["y"], style];
+        }
+        doc.fontSize(style["fontSize"] || 16).text(...textArgs);
+    }
+}
 
-        // 计算表格的宽度为页面宽度的90%
-        let tableWidth = pageWidth * 0.9;
+function makePDFTable({
+    doc,
+    tableRowArr,
+    tableColumnArr,
+    globalStyle = {
+        backgroundColor: "wheat", // 灰色背景色
+        color: "#000000", // 黑色文本颜色
+        borderColor: "#000000", // 黑色边框颜色
+        fontSize: 8,
+    },
+} = {}) {
+    let _config = {
+        页面高度: doc.page.height,
+        页面宽度: doc.page.width,
+        起始页码: doc._pageBuffer.length,
+        起始位置: doc.y,
+        字体大小: 8,
+        表格列数: tableColumnArr.length,
+        表体行数: tableRowArr.length,
+        表格上下间距比: 5, //%
+        表格左右间距比: 5, //%
+        //待计算属性
+        表格上下间距: "",
+        表格左右间距: "",
+        表头单行高度: "",
+        表体单行高度: "",
+        表格宽度: "",
+        表格各单元格宽度: "", //数组
+        表格理想高度: "",
+        表格最低高度: "",
+        表格单页可用高度: "",
+        表格单页可用行数: "",
+        表格单页使用高度: "",
+        表格单页起始坐标: "", //数组
+        起始页表格可用高度: "",
+        表格第一页页码: "",
+        表格另起一页判断: "",
+        表格第一页可用高度: "",
+        表格第一页可用行数: "",
+        表格第一页行数: "",
+        表格第一页高度: "",
+        表格第一页起始坐标: "", //数组
+        表体剩余行数: "",
+        表格剩余所需页数: "",
+        表格所需总页数: "",
+        //计算方法
+        表格上下间距计算: () => (_config["页面高度"] * _config["表格上下间距比"]) / 100,
+        表格左右间距计算: () => (_config["页面宽度"] * _config["表格左右间距比"]) / 100,
+        表头单行高度计算: () => getCellHeight(_config["字体大小"]),
+        表体单行高度计算: () => getCellHeight(_config["字体大小"]),
+        表格宽度计算: () => _config["页面宽度"] - _config["表格左右间距"] * 2,
+        表格各单元格宽度计算: () => getCellWidthArr(tableColumnArr),
+        表格理想高度计算: () =>
+            _config["表头单行高度"] * _config["表体行数"] + 1 * _config["表体单行高度"], //无限高的表格所需的高度
+        表格最低高度计算: () => _config["表头单行高度"] + _config["表体单行高度"], //表头+表体*1行
+        表格单页可用高度计算: () => _config["页面高度"] - _config["表格上下间距"] * 2, //刨去间距
+        表格单页可用行数计算: () =>
+            Math.floor(
+                (_config["表格单页可用高度"] - _config["表头单行高度"]) / _config["表体单行高度"],
+            ), //单页表格可用行数，向下取整（不含表头）
+        表格单页使用高度计算: () =>
+            _config["表格单页可用行数"] * _config["表体单行高度"] + _config["表头单行高度"],
+        表格单页起始坐标计算: () => [_config["表格左右间距"], _config["表格上下间距"]],
+        起始页表格可用高度计算: () =>
+            _config["页面高度"] - _config["起始位置"] - _config["表格上下间距"] * 2, //可能为负
+        表格第一页页码计算: () =>
+            _config["起始页表格可用高度"] > 0 ? _config["起始页码"] : _config["起始页码"] + 1, //判断表格是否和段落在同一页，页码不同则表格可用高度不同
+        表格另起一页判断计算: () => _config["表格第一页页码"] > _config["起始页码"],
+        表格第一页可用高度计算: () =>
+            _config["表格另起一页判断"]
+                ? _config["页面高度"] - _config["表格上下间距"] * 2
+                : _config["起始页表格可用高度"], //不用分页，则段落和表格能共存，否则表格另起一页
+        表格第一页可用行数计算: () =>
+            Math.floor(
+                (_config["表格第一页可用高度"] - _config["表头单行高度"]) / _config["表体单行高度"],
+            ), //第一页表体行数，向下取整（不含表头）
+        表格第一页行数计算: () =>
+            _config["表体行数"] > _config["表格第一页可用行数"]
+                ? _config["表格第一页可用行数"]
+                : _config["表体行数"],
+        表格第一页高度计算: () =>
+            _config["表格第一页行数"] * _config["表体单行高度"] + _config["表头单行高度"],
+        表格第一页起始坐标计算: () => [
+            _config["表格左右间距"],
+            _config["表格另起一页判断"]
+                ? _config["表格上下间距"]
+                : _config["起始位置"] + _config["表格上下间距"],
+        ],
+        表体剩余行数计算: () => _config["表体行数"] - _config["表格第一页可用行数"], //表体行数大于第一页消耗的行数，则拆分
+        表格剩余所需页数计算: () =>
+            _config["表体剩余行数"] < 0
+                ? 0
+                : Math.ceil(_config["表体剩余行数"] / _config["表格单页可用行数"]),
+        表格所需总页数计算: () => _config["表格剩余所需页数"] + 1,
+    };
+    function main() {
+        init();
+        // console.log(_config);
+        makeTable();
+    }
+    main();
 
-        // 设置表头背景颜色、文本颜色和边框颜色
-        let headerBackgroundColor = "#CCCCCC"; // 灰色背景色
-        let textColor = "#000000"; // 黑色文本颜色
-        let borderColor = "#000000"; // 黑色边框颜色
+    function init() {
+        _config["表格上下间距"] = _config["表格上下间距计算"]();
+        _config["表格左右间距"] = _config["表格左右间距计算"]();
+        _config["表头单行高度"] = _config["表头单行高度计算"]();
+        _config["表体单行高度"] = _config["表体单行高度计算"]();
+        _config["表格宽度"] = _config["表格宽度计算"]();
+        _config["表格各单元格宽度"] = _config["表格各单元格宽度计算"]();
+        _config["表格理想高度"] = _config["表格理想高度计算"]();
+        _config["表格最低高度"] = _config["表格最低高度计算"]();
+        _config["表格单页可用高度"] = _config["表格单页可用高度计算"]();
+        _config["表格单页可用行数"] = _config["表格单页可用行数计算"]();
+        _config["表格单页使用高度"] = _config["表格单页使用高度计算"]();
+        _config["表格单页起始坐标"] = _config["表格单页起始坐标计算"]();
+        _config["起始页表格可用高度"] = _config["起始页表格可用高度计算"]();
+        _config["表格第一页页码"] = _config["表格第一页页码计算"]();
+        _config["表格另起一页判断"] = _config["表格另起一页判断计算"]();
+        _config["表格第一页可用高度"] = _config["表格第一页可用高度计算"]();
+        _config["表格第一页可用行数"] = _config["表格第一页可用行数计算"]();
+        _config["表格第一页行数"] = _config["表格第一页行数计算"]();
+        _config["表格第一页高度"] = _config["表格第一页高度计算"]();
+        _config["表格第一页起始坐标"] = _config["表格第一页起始坐标计算"]();
+        _config["表体剩余行数"] = _config["表体剩余行数计算"]();
+        _config["表格剩余所需页数"] = _config["表格剩余所需页数计算"]();
+        _config["表格所需总页数"] = _config["表格所需总页数计算"]();
+    }
 
-        // 定义表头文本
-        let headerText = ["Header 1", "Header 2", "Header 3", "Header 4", "Header 5"];
-        let dataArr = [
-            ["Row 1, Col 1", "Row 1, Col 2", "Row 1, Col 3", "Row 1, Col 4", "Row 1, Col 5"],
-            ["Row 2, Col 1", "Row 2, Col 2", "Row 2, Col 3", "Row 2, Col 4", "Row 2, Col 5"],
-            ["Row 3, Col 1", "Row 3, Col 2", "Row 3, Col 3", "Row 3, Col 4", "Row 3, Col 5"],
-            ["Row 4, Col 1", "Row 4, Col 2", "Row 4, Col 3", "Row 4, Col 4", "Row 4, Col 5"],
-            ["Row 5, Col 1", "Row 5, Col 2", "Row 5, Col 3", "Row 5, Col 4", "Row 5, Col 5"],
-            ["Row 6, Col 1", "Row 6, Col 2", "Row 6, Col 3", "Row 6, Col 4", "Row 6, Col 5"],
-            ["Row 7, Col 1", "Row 7, Col 2", "Row 7, Col 3", "Row 7, Col 4", "Row 7, Col 5"],
-            ["Row 8, Col 1", "Row 8, Col 2", "Row 8, Col 3", "Row 8, Col 4", "Row 8, Col 5"],
-            ["Row 9, Col 1", "Row 9, Col 2", "Row 9, Col 3", "Row 9, Col 4", "Row 9, Col 5"],
-            ["Row 10, Col 1", "Row 10, Col 2", "Row 10, Col 3", "Row 10, Col 4", "Row 10, Col 5"],
-            ["Row 11, Col 1", "Row 11, Col 2", "Row 11, Col 3", "Row 11, Col 4", "Row 11, Col 5"],
-        ];
+    function makeTable() {
+        if (_config["表格单页可用高度计算"] < 0) return false; //表格高度不够一页
+        if (_config["表格另起一页判断"]) {
+            //先做第一页
+            //表格和段落不在同一页
+            doc.addPage();
+        }
+        //绘制表头
+        let pageOneCoordArr = _config["表格第一页起始坐标"];
+        if (!Array.isArray(pageOneCoordArr) || pageOneCoordArr.length !== 2) return false;
+        const current_x = pageOneCoordArr[0]; //左边距偏移
+        let current_y = pageOneCoordArr[1]; //上边距偏移
+        makeRow(
+            current_x,
+            current_y,
+            tableColumnArr,
+            _config["表头单行高度"],
+            globalStyle["backgroundColor"],
+        );
+        current_y = current_y + _config["表头单行高度"];
+        //将tableRowArr数据进行拆分，分成第一页的数据，和剩余的数据
+        let tableRowFirstPageArr = tableRowArr.slice(0, _config["表格第一页行数"]);
+        let tableRowRestPageArr = tableRowArr.slice(_config["表格第一页行数"]) || [];
+        let rowLeftCount = _config["表体剩余行数"];
+        for (let rowArr of tableRowFirstPageArr) {
+            makeRow(current_x, current_y, rowArr, _config["表体单行高度"]);
+            current_y = current_y + _config["表体单行高度"];
+        }
+        if (rowLeftCount <= 0) return;
+        doc.addPage();
+        for (let i = 0; i < _config["表格剩余所需页数"]; i++) {
+            let pageRowCount =
+                _config["表格单页可用行数"] < rowLeftCount
+                    ? _config["表格单页可用行数"]
+                    : rowLeftCount; //占满整页
+            current_y = _config["表格单页起始坐标"][1];
+            makeRow(
+                current_x,
+                current_y,
+                tableColumnArr,
+                _config["表头单行高度"],
+                globalStyle["backgroundColor"],
+            );
+            current_y = current_y + _config["表头单行高度"];
+            let tableRowThisPageArr = tableRowRestPageArr.slice(0, _config["表格单页可用行数"]);
+            for (let rowArr of tableRowThisPageArr) {
+                makeRow(current_x, current_y, rowArr, _config["表体单行高度"]);
+                current_y = current_y + _config["表体单行高度"];
+            }
+            tableRowRestPageArr = tableRowRestPageArr.slice(_config["表格单页可用行数"]);
+            rowLeftCount = rowLeftCount - pageRowCount;
+            if (i !== _config["表格剩余所需页数"] - 1) doc.addPage();
+            console.log("分页", doc._pageBuffer.length, doc.x, doc.y);
+        } //绘制剩余的表格
+    }
 
-        // 定义表格的列数和行数
-        let numColumns = headerText.length;
-        let numRows = dataArr.length;
-        // 调整字体大小
-        let fontSize = 6;
+    function makeRow(x, y, rowArr, rowHeight, backgroundColor) {
+        let current_x = _config["表格左右间距"]; //左边距偏移
+        let columnWidthArr = _config["表格各单元格宽度"];
+        doc.rect(x, y, _config["表格宽度"], rowHeight);
+        if (backgroundColor) doc.fill(backgroundColor); //背景色
+        doc.fillColor(globalStyle["color"])
+            .fontSize(globalStyle["fontSize"])
+            .strokeColor(globalStyle["borderColor"]) // 设置边框颜色
+            .stroke(); // 绘制边框
+        rowArr.forEach((text, index) => {
+            let columnWidth = columnWidthArr[index]; //单元格宽度
+            let cell_x = current_x; //单元格起始坐标
+            let cell_y = y;
+            let text_x = cell_x + 2;
+            let text_y = cell_y + _config["表头单行高度"] / 4;
+            doc.rect(cell_x, cell_y, columnWidth, _config["表头单行高度"])
+                // .fill(backgroundColor)
+                .fillColor(globalStyle["color"])
+                .fontSize(globalStyle["fontSize"])
+                .stroke(); // 绘制边框
+            doc.text(text, text_x, text_y); // 调整文本位置以居中
+            current_x = cell_x + columnWidth; //下一个单元格的起始坐标
+        }); // 绘制文本和边框
+    }
+
+    function countFullWidthCharacters(str) {
+        if (str === undefined) return 0;
+        let fullWidthCount = 0;
+        for (let i = 0; i < str.length; i++) {
+            if (!str[i].match(/[\u0000-\u00ff]/g)) {
+                fullWidthCount++;
+            }
+        }
+        return fullWidthCount;
+    } // 计算全角字符的个数
+
+    // 调整字体大小
+    function getCellHeight(fontSize) {
         let fontRowHeightMapping = {
             6: 20,
             7: 23,
@@ -161,106 +378,26 @@ async function onNewPDF({ textArr = [], paperWidth = "", paperHeight = "" } = {}
             17: 53,
             18: 56,
         };
+        return fontRowHeightMapping[fontSize]; // 调整行高
+    }
 
-        // 定义行高
-        let rowHeight = fontRowHeightMapping[fontSize]; // 调整行高
-        let headerHeight = rowHeight; // 调整表头高度
-        let marginTopOrBottom = 10;
-        let cellMarginLeftOrRight = 5;
-
-        let idealMaxDataRows = Math.floor(
-            (pageHeight - marginTopOrBottom * 2 - headerHeight) / rowHeight,
-        ); //表格理想行数
-        let idealTableHeight = idealMaxDataRows * rowHeight + headerHeight; //表格的理想高度
-        let cellWidth = tableWidth / numColumns; //单元格宽度
-        let heightAlready = doc.y;
-        let pageAlready = doc._pageBuffer.length;
-        let tableStartY = heightAlready + marginTopOrBottom; //表格实际起始位置
-        let firstPageTableHeight = pageHeight - tableStartY - marginTopOrBottom;
-        let pagesNeededForThisTable; // 需要的页数
-        let firstPageTableRows; // 第一页的行数
-        if (firstPageTableHeight === idealTableHeight) {
-            pagesNeededForThisTable = Math.ceil(numRows / idealMaxDataRows);
-            firstPageTableRows = idealMaxDataRows;
-        } // 如果第一页的高度刚好够，则正常计算需要的页数
-        else {
-            checkFirstPage(); // 检查第一页的高度是否够用
-            firstPageTableHeight = pageHeight - tableStartY - marginTopOrBottom;
-            firstPageTableRows = Math.floor((firstPageTableHeight - headerHeight) / rowHeight);
-            pagesNeededForThisTable =
-                Math.ceil((numRows - firstPageTableRows) / idealMaxDataRows) + 1;
-        } // 如果第一页的高度不够，则需要的页数为：第一页的高度不够的行数 + 剩余行数 / 理想行数
-        console.log("需要的页数", pagesNeededForThisTable);
-        function checkFirstPage() {
-            if (firstPageTableHeight < headerHeight + rowHeight) {
-                doc.addPage();
-                tableStartY = marginTopOrBottom;
-                pageAlready = doc._pageBuffer.length;
-                pagesNeededForThisTable--;
-            } // 如果第一页的高度不够，就添加一页
-        }
-        function makeHeader() {
-            // 绘制表头背景色、文本和边框
-            doc.rect(cellMarginLeftOrRight, tableStartY, tableWidth, rowHeight)
-                .fill(headerBackgroundColor)
-                .fillColor(textColor)
-                .fontSize(fontSize)
-                .strokeColor(borderColor) // 设置边框颜色
-                .stroke(); // 绘制边框
-            headerText.forEach((text, index) => {
-                let columnWidth = tableWidth / numColumns;
-                let x = index * columnWidth + cellMarginLeftOrRight;
-                let y = marginTopOrBottom; // 加上表头的高度
-                // 绘制文本和边框
-                doc.rect(x, y, columnWidth, rowHeight)
-                    .fillColor(textColor)
-                    .fontSize(fontSize)
-                    .stroke(); // 绘制边框
-                doc.text(text, x + 1, y + 1); // 调整文本位置以居中
-            });
-        }
-
-        function makeBody(i) {
-            // 绘制表格数据
-            let rowsAllowed = i === 0 ? firstPageTableRows : idealMaxDataRows;
-            for (let j = 0; j < rowsAllowed; j++) {
-                let data = [];
-                for (let k = 0; k < numColumns; k++) {
-                    data.push(`Row ${i * rowsAllowed + j + 1}, Col ${k + 1}`);
-                }
-                let _currentPageNumber = doc._pageBuffer.length;
-                console.log("当前页", _currentPageNumber);
-                let y = j * rowHeight + marginTopOrBottom + rowHeight; // 加上表头的高度
-                for (let k = 0; k < numColumns; k++) {
-                    let columnWidth = tableWidth / numColumns;
-                    let x = k * columnWidth + cellMarginLeftOrRight;
-
-                    // 绘制文本和边框
-                    doc.rect(x, y, columnWidth, rowHeight)
-                        .fillColor(textColor)
-                        .fontSize(fontSize)
-                        .stroke(); // 绘制边框
-
-                    doc.text(data[k], x + 1, y + 1); // 调整文本位置以居中
-                }
-            }
-        }
-        for (let i = 0; i < pagesNeededForThisTable; i++) {
-            makeHeader();
-            makeBody(i);
-            if (doc._pageBuffer.length < pagesNeededForThisTable + pageAlready - 1) {
-                doc.addPage();
-            }
-        }
-        console.log(doc.x, doc.y);
-        console.log("当前页", doc._pageBuffer.length);
-
-        // 结束PDF文档
-        pdfDoc.end();
-    });
-    callbacks?.({
-        success: result ? true : false,
-        data: { relativePath },
-        message: result ? "PDF文件已就位" : "PDF文件生成失败",
-    });
+    function getCellWidthArr(tableColumnArr) {
+        let totalText = tableColumnArr.join(""); //表头文本总长度
+        let fullWidthCount = countFullWidthCharacters(totalText); //全角字符的个数
+        let totalLength = totalText.length + fullWidthCount; //总长度
+        let current_x = _config["表格左右间距"]; //左边距偏移
+        return tableColumnArr.map((text) => {
+            let _fullWidthCount = countFullWidthCharacters(text); //全角字符的个数
+            let textLength = text.length + _fullWidthCount; //总长度
+            let ratio = textLength / totalLength; //占比
+            let columnWidth = _config["表格宽度"] * ratio; //单元格宽度
+            let cell_x = current_x; //单元格起始坐标
+            current_x = cell_x + columnWidth; //下一个单元格的起始坐标
+            console.log("占比", ratio);
+            console.log("单元格起始坐标", cell_x);
+            console.log("单元格宽度", columnWidth);
+            console.log("下一个单元格的起始坐标", current_x);
+            return columnWidth;
+        });
+    }
 }
