@@ -30,16 +30,17 @@ prepare();
 // 创建PDF文档
 async function onNewPDF(
     {
-        textArr = [],
         paperWidth = "",
         paperHeight = "",
+        textArr,
+        textStyle,
         tableColumnArr,
         tableRowArr,
-        globalStyle,
+        tableStyle,
     } = {},
     callbacks,
 ) {
-    if (!textArr || !Array.isArray(textArr) || !textArr.length) {
+    if (!Array.isArray(textArr) && !Array.isArray(tableRowArr)) {
         callbacks?.({
             success: false,
             data: null,
@@ -100,10 +101,10 @@ async function onNewPDF(
 
         // pdfDoc.moveDown(0.5); // 将绘图位置下移一个单位
         if (textArr) {
-            makePDFParagraph({ doc, textArr, globalStyle });
+            makePDFParagraph({ doc, textArr, textStyle });
         }
         if (tableColumnArr && tableRowArr) {
-            makePDFTable({ doc, tableColumnArr, tableRowArr, globalStyle });
+            makePDFTable({ doc, tableColumnArr, tableRowArr, tableStyle });
         } // 绘制表格
         // 结束PDF文档
         pdfDoc.end();
@@ -115,7 +116,7 @@ async function onNewPDF(
     });
 }
 
-function makePDFParagraph({ doc, textArr, globalStyle = {} } = {}) {
+function makePDFParagraph({ doc, textArr, textStyle = {} } = {}) {
     for (let textObj of textArr) {
         if (typeof textObj !== "object") {
             try {
@@ -127,8 +128,8 @@ function makePDFParagraph({ doc, textArr, globalStyle = {} } = {}) {
             doc.addPage();
             continue;
         } // 手动添加新页面
-        if (typeof style !== "object") style = {};
-        style = { align: "center", height: 1, lineGap: 1, fontSize: 16, ...style };
+        if (!style || typeof style !== "object") style = {};
+        style = { align: "center", height: 1, lineGap: 1, fontSize: 16, ...textStyle, ...style }; // 默认样式
         if (style.fontWeight === "bold") doc.font(path.join(__dirname, font_bold));
         else doc.font(path.join(__dirname, font_regular));
         let textArgs = [value, style];
@@ -145,7 +146,7 @@ function makePDFTable({
     doc,
     tableRowArr,
     tableColumnArr,
-    globalStyle = {
+    tableStyle = {
         backgroundColor: "wheat", // 灰色背景色
         color: "#000000", // 黑色文本颜色
         borderColor: "#000000", // 黑色边框颜色
@@ -286,7 +287,7 @@ function makePDFTable({
             current_y,
             tableColumnArr,
             _config["表头单行高度"],
-            globalStyle["backgroundColor"],
+            tableStyle["backgroundColor"],
         );
         current_y = current_y + _config["表头单行高度"];
         //将tableRowArr数据进行拆分，分成第一页的数据，和剩余的数据
@@ -310,7 +311,7 @@ function makePDFTable({
                 current_y,
                 tableColumnArr,
                 _config["表头单行高度"],
-                globalStyle["backgroundColor"],
+                tableStyle["backgroundColor"],
             );
             current_y = current_y + _config["表头单行高度"];
             let tableRowThisPageArr = tableRowRestPageArr.slice(0, _config["表格单页可用行数"]);
@@ -321,7 +322,7 @@ function makePDFTable({
             tableRowRestPageArr = tableRowRestPageArr.slice(_config["表格单页可用行数"]);
             rowLeftCount = rowLeftCount - pageRowCount;
             if (i !== _config["表格剩余所需页数"] - 1) doc.addPage();
-            console.log("分页", doc._pageBuffer.length, doc.x, doc.y);
+            // console.log("分页", doc._pageBuffer.length, doc.x, doc.y);
         } //绘制剩余的表格
     }
 
@@ -330,9 +331,9 @@ function makePDFTable({
         let columnWidthArr = _config["表格各单元格宽度"];
         doc.rect(x, y, _config["表格宽度"], rowHeight);
         if (backgroundColor) doc.fill(backgroundColor); //背景色
-        doc.fillColor(globalStyle["color"])
-            .fontSize(globalStyle["fontSize"])
-            .strokeColor(globalStyle["borderColor"]) // 设置边框颜色
+        doc.fillColor(tableStyle["color"])
+            .fontSize(tableStyle["fontSize"])
+            .strokeColor(tableStyle["borderColor"]) // 设置边框颜色
             .stroke(); // 绘制边框
         rowArr.forEach((text, index) => {
             let columnWidth = columnWidthArr[index]; //单元格宽度
@@ -342,8 +343,8 @@ function makePDFTable({
             let text_y = cell_y + _config["表头单行高度"] / 4;
             doc.rect(cell_x, cell_y, columnWidth, _config["表头单行高度"])
                 // .fill(backgroundColor)
-                .fillColor(globalStyle["color"])
-                .fontSize(globalStyle["fontSize"])
+                .fillColor(tableStyle["color"])
+                .fontSize(tableStyle["fontSize"])
                 .stroke(); // 绘制边框
             doc.text(text, text_x, text_y); // 调整文本位置以居中
             current_x = cell_x + columnWidth; //下一个单元格的起始坐标
@@ -393,10 +394,10 @@ function makePDFTable({
             let columnWidth = _config["表格宽度"] * ratio; //单元格宽度
             let cell_x = current_x; //单元格起始坐标
             current_x = cell_x + columnWidth; //下一个单元格的起始坐标
-            console.log("占比", ratio);
-            console.log("单元格起始坐标", cell_x);
-            console.log("单元格宽度", columnWidth);
-            console.log("下一个单元格的起始坐标", current_x);
+            // console.log("占比", ratio);
+            // console.log("单元格起始坐标", cell_x);
+            // console.log("单元格宽度", columnWidth);
+            // console.log("下一个单元格的起始坐标", current_x);
             return columnWidth;
         });
     }
