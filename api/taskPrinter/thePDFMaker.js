@@ -171,19 +171,68 @@ async function onNewPDF(
 }
 
 function makePDFParagraph({ doc, textArr, textStyle = {}, noPagination = false } = {}) {
-    for (let textObj of textArr) {
-        if (typeof textObj !== "object") {
-            try {
-                textObj = JSON.parse(textObj);
-            } catch (e) {}
+    main();
+    function main() {
+        for (let textObj of textArr) {
+            if (typeof textObj !== "object") {
+                try {
+                    textObj = JSON.parse(textObj);
+                } catch (e) {}
+            }
+            let { value = "", style = {}, addPage } = textObj || {};
+            if (addPage && !noPagination) {
+                doc.addPage();
+                continue;
+            } // 手动添加新页面
+            if (!style || typeof style !== "object") style = {};
+            style = {
+                align: "center",
+                height: 1,
+                lineGap: 1,
+                fontSize: 16,
+                ...textStyle,
+                ...style,
+            }; // 默认样式
+            let { fontSize = 16, maxLines } = style || {};
+            if (!maxLines) {
+                makeParagraph({ doc, value, style });
+                continue;
+            }
+            let maxStrLength = getFontWidth(fontSize);
+            for (let i = 0; i < maxLines; i++) {
+                if (value === undefined) break;
+                let strLength = countFullWidthCharacters(value);
+                if (strLength <= maxStrLength) {
+                    makeParagraph({ doc, value, style });
+                } else {
+                    let _value = value.slice(0, maxStrLength);
+                    makeParagraph({ doc, value: _value, style });
+                }
+                value = value.slice(maxStrLength);
+            }
         }
-        let { value = "", style = {}, addPage } = textObj || {};
-        if (addPage && !noPagination) {
-            doc.addPage();
-            continue;
-        } // 手动添加新页面
-        if (!style || typeof style !== "object") style = {};
-        style = { align: "center", height: 1, lineGap: 1, fontSize: 16, ...textStyle, ...style }; // 默认样式
+    }
+    function getFontWidth(fontSize) {
+        let fontWidthObj = {
+            20: 4,
+            19: 6,
+            18: 8,
+            17: 10,
+            16: 12,
+            15: 13,
+            14: 14,
+            13: 15,
+            12: 17,
+            11: 19,
+            10: 22,
+            9: 25,
+            8: 28,
+            7: 30,
+            6: 33,
+        }; //全角下单行最多字符数
+        return fontWidthObj[fontSize] || 16;
+    }
+    function makeParagraph({ doc, value = "", style = {} } = {}) {
         if (style.fontWeight === "bold") doc.font(path.join(__dirname, font_bold));
         else doc.font(path.join(__dirname, font_regular));
         let textArgs = [value, style];
@@ -225,7 +274,7 @@ function makePDFImage({
     }
 } // 插入图片到PDF
 
-function makePDFDash({ doc, dashArr, dashStyle = { space: 5, length: 5 }, noPagination = false }) {
+function makePDFDash({ doc, dashArr, dashStyle = { space: 5, length: 5 } }) {
     if (!Array.isArray(dashArr)) return;
     for (let dashObj of dashArr) {
         let { value, style } = dashObj || {};
