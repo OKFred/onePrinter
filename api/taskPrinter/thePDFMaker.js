@@ -37,6 +37,7 @@ async function onNewPDF(
         tableColumnArr,
         tableRowArr,
         tableStyle,
+        tableConfig,
     } = {},
     callbacks,
 ) {
@@ -104,7 +105,7 @@ async function onNewPDF(
             makePDFParagraph({ doc, textArr, textStyle });
         }
         if (tableColumnArr && tableRowArr) {
-            makePDFTable({ doc, tableColumnArr, tableRowArr, tableStyle });
+            makePDFTable({ doc, tableColumnArr, tableRowArr, tableStyle, tableConfig });
         } // 绘制表格
         // 结束PDF文档
         pdfDoc.end();
@@ -152,6 +153,7 @@ function makePDFTable({
         borderColor: "#000000", // 黑色边框颜色
         fontSize: 8,
     },
+    tableConfig = {},
 } = {}) {
     let _config = {
         页面高度: doc.page.height,
@@ -169,6 +171,7 @@ function makePDFTable({
         表头单行高度: "",
         表体单行高度: "",
         表格宽度: "",
+        表格各单元格宽度比: "", //数组
         表格各单元格宽度: "", //数组
         表格理想高度: "",
         表格最低高度: "",
@@ -193,7 +196,7 @@ function makePDFTable({
         表头单行高度计算: () => getCellHeight(_config["字体大小"]),
         表体单行高度计算: () => getCellHeight(_config["字体大小"]),
         表格宽度计算: () => _config["页面宽度"] - _config["表格左右间距"] * 2,
-        表格各单元格宽度计算: () => getCellWidthArr(tableColumnArr),
+        表格各单元格宽度计算: () => getCellWidthArr(tableColumnArr, tableConfig.ratioArr),
         表格理想高度计算: () =>
             _config["表头单行高度"] * _config["表体行数"] + 1 * _config["表体单行高度"], //无限高的表格所需的高度
         表格最低高度计算: () => _config["表头单行高度"] + _config["表体单行高度"], //表头+表体*1行
@@ -382,11 +385,27 @@ function makePDFTable({
         return fontRowHeightMapping[fontSize]; // 调整行高
     }
 
-    function getCellWidthArr(tableColumnArr) {
+    function getCellWidthArr(tableColumnArr, ratioArr) {
+        let current_x = _config["表格左右间距"]; //左边距偏移
+        let ratioCondition1 = ratioArr && ratioArr.length === tableColumnArr.length;
+        let ratioCondition2 =
+            ratioCondition1 &&
+            ratioArr.map((ratio) => Number(ratio)).filter((ratio) => !isNaN(ratio)).length ===
+                ratioArr.length;
+        let ratioConditon3 =
+            ratioCondition2 && ratioArr.reduce((a, b) => [a, b].calc("+"), 0) === 1;
+        if (ratioConditon3) {
+            _config["表格各单元格宽度比"] = ratioArr.map((ratio) => Number(ratio));
+            return _config["表格各单元格宽度比"].map((ratio) => {
+                let columnWidth = _config["表格宽度"] * ratio; //单元格宽度
+                let cell_x = current_x; //单元格起始坐标
+                current_x = cell_x + columnWidth; //下一个单元格的起始坐标
+                return columnWidth;
+            });
+        }
         let totalText = tableColumnArr.join(""); //表头文本总长度
         let fullWidthCount = countFullWidthCharacters(totalText); //全角字符的个数
         let totalLength = totalText.length + fullWidthCount; //总长度
-        let current_x = _config["表格左右间距"]; //左边距偏移
         return tableColumnArr.map((text) => {
             let _fullWidthCount = countFullWidthCharacters(text); //全角字符的个数
             let textLength = text.length + _fullWidthCount; //总长度
@@ -394,10 +413,6 @@ function makePDFTable({
             let columnWidth = _config["表格宽度"] * ratio; //单元格宽度
             let cell_x = current_x; //单元格起始坐标
             current_x = cell_x + columnWidth; //下一个单元格的起始坐标
-            // console.log("占比", ratio);
-            // console.log("单元格起始坐标", cell_x);
-            // console.log("单元格宽度", columnWidth);
-            // console.log("下一个单元格的起始坐标", current_x);
             return columnWidth;
         });
     }
