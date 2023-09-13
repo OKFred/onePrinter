@@ -38,6 +38,11 @@ async function onNewPDF(
         tableRowArr,
         tableStyle,
         tableConfig,
+        imageArr,
+        imageStyle,
+        dashArr,
+        dashStyle,
+        mixinArr,
     } = {},
     callbacks,
 ) {
@@ -70,43 +75,91 @@ async function onNewPDF(
             resolve(true);
         });
 
-        // 插入图片到PDF
-        /*         pdfDoc.image(path.join(process.cwd(), "/public/logo.png"), {
-        fit: [25, 25], // 图片尺寸
-        align: "left", // 图片对齐方式
-        valign: "top", // 图片垂直对齐方式
-        x: 50, // 左上角x坐标
-        y: 0, // 左上角y坐标
-    }); */
-        // 设置虚线样式
-        /*    pdfDoc.dash(5, { space: 5 }); // 参数表示虚线段的长度和间距
-    pdfDoc
-        .moveTo(0, 23) // 起始坐标
-        .lineTo(500, 23) // 结束坐标
-        .stroke(); // 绘制线条
-    // 重置虚线样式
-    pdfDoc.undash(); */
-
-        /*         let textArr = [
-        { value: "这是一个多行文本示例" },
-        {
-            value: "红美人西瓜1个",
-            style: {
-                align: "left",
-                indent: 50,
-                fontWeight: "bold",
-                fontSize: 14,
-            },
-        },
-    ]; */
-
-        // pdfDoc.moveDown(0.5); // 将绘图位置下移一个单位
-        if (textArr) {
-            makePDFParagraph({ doc, textArr, textStyle });
-        }
-        if (tableColumnArr && tableRowArr) {
-            makePDFTable({ doc, tableColumnArr, tableRowArr, tableStyle, tableConfig });
-        } // 绘制表格
+        let makeAll = () => {
+            if (textArr) {
+                makePDFParagraph({ doc, textArr, textStyle });
+            }
+            if (imageArr) {
+                makePDFImage({ doc, imageArr, imageStyle });
+            }
+            if (dashArr) {
+                makePDFDash({ doc, dashArr, dashStyle });
+            }
+            if (tableColumnArr && tableRowArr) {
+                makePDFTable({ doc, tableColumnArr, tableRowArr, tableStyle, tableConfig });
+            } // 绘制表格
+        };
+        if (mixinArr && Array.isArray(mixinArr)) {
+            let leftCountObj = {
+                textArr: textArr?.length || 0,
+                imageArr: imageArr?.length || 0,
+                dashArr: dashArr?.length || 0,
+                tableRowArr: tableRowArr?.length || 0,
+            };
+            let pageNum = 1;
+            let finishCheck = () => {
+                if (
+                    leftCountObj["textArr"] <= 0 &&
+                    leftCountObj["imageArr"] <= 0 &&
+                    leftCountObj["dashArr"] <= 0 &&
+                    leftCountObj["tableRowArr"] <= 0
+                )
+                    return true;
+                return false;
+            };
+            let maxIteration = 100;
+            let makeMixins = () => {
+                if (maxIteration <= 0) return;
+                maxIteration--;
+                for (let mixinObj of mixinArr) {
+                    let { label, value } = mixinObj || {};
+                    if (label === "textArr") {
+                        if (leftCountObj[label] <= 0) continue;
+                        let newTextArr = textArr.splice(0, value);
+                        makePDFParagraph({
+                            doc,
+                            textArr: newTextArr,
+                            textStyle,
+                            noPagination: true,
+                        });
+                        leftCountObj[label] = leftCountObj[label] - value;
+                    } else if (label === "imageArr") {
+                        if (leftCountObj[label] <= 0) continue;
+                        let newImageArr = imageArr.splice(0, value);
+                        makePDFImage({
+                            doc,
+                            imageArr: newImageArr,
+                            imageStyle,
+                            noPagination: true,
+                        });
+                        leftCountObj[label] = leftCountObj[label] - value;
+                    } else if (label === "dashArr") {
+                        if (leftCountObj[label] <= 0) continue;
+                        let newDashArr = dashArr.splice(0, value);
+                        makePDFDash({ doc, dashArr: newDashArr, dashStyle, noPagination: true });
+                        leftCountObj[label] = leftCountObj[label] - value;
+                    } else if (label === "tableRowArr") {
+                        if (leftCountObj[label] <= 0) continue;
+                        let newTableRowArr = tableRowArr.splice(0, value);
+                        makePDFTable({
+                            doc,
+                            tableColumnArr,
+                            tableRowArr: newTableRowArr,
+                            tableStyle,
+                            tableConfig,
+                            noPagination: true,
+                        });
+                        leftCountObj[label] = leftCountObj[label] - value;
+                    }
+                }
+                if (!finishCheck()) {
+                    pageNum++;
+                    doc.addPage();
+                    makeMixins();
+                }
+            };
+            makeMixins();
+        } else makeAll();
         // 结束PDF文档
         pdfDoc.end();
     });
@@ -117,7 +170,7 @@ async function onNewPDF(
     });
 }
 
-function makePDFParagraph({ doc, textArr, textStyle = {} } = {}) {
+function makePDFParagraph({ doc, textArr, textStyle = {}, noPagination = false } = {}) {
     for (let textObj of textArr) {
         if (typeof textObj !== "object") {
             try {
@@ -125,7 +178,7 @@ function makePDFParagraph({ doc, textArr, textStyle = {} } = {}) {
             } catch (e) {}
         }
         let { value = "", style = {}, addPage } = textObj || {};
-        if (addPage) {
+        if (addPage && !noPagination) {
             doc.addPage();
             continue;
         } // 手动添加新页面
@@ -143,6 +196,49 @@ function makePDFParagraph({ doc, textArr, textStyle = {} } = {}) {
     }
 }
 
+function makePDFImage({
+    doc,
+    imageArr,
+    imageStyle = {
+        // fit: [25, 25], // 图片尺寸
+        // align: "left", // 图片对齐方式
+        // valign: "top", // 图片垂直对齐方式
+        // x: 50, // 左上角x坐标
+        // y: 0, // 左上角y坐标
+    },
+    noPagination = false,
+} = {}) {
+    if (!Array.isArray(imageArr)) return;
+    for (let imageObj of imageArr) {
+        let { relativePath } = imageObj || {};
+        let absolutePath = path.join(process.cwd(), relativePath);
+        if (
+            !relativePath ||
+            /http/i.test(relativePath) ||
+            !fs.existsSync(absolutePath) ||
+            !absolutePath.startsWith(path.join(process.cwd(), "public"))
+        ) {
+            continue;
+        }
+        doc.image(absolutePath, imageStyle);
+        // pdfDoc.moveDown(0.5); // 将绘图位置下移一个单位
+    }
+} // 插入图片到PDF
+
+function makePDFDash({ doc, dashArr, dashStyle = { space: 5, length: 5 }, noPagination = false }) {
+    if (!Array.isArray(dashArr)) return;
+    for (let dashObj of dashArr) {
+        let { value, style } = dashObj || {};
+        if (!style) style = dashStyle;
+        let { startX, endX, startY, endY } = value || {};
+        doc.dash(style.length, ength, style); // 参数表示虚线段的长度和间距
+        doc.moveTo(startX, startY) // 起始坐标
+            .lineTo(endX, endY) // 结束坐标
+            .stroke(); // 绘制线条
+        doc.undash(); // 重置虚线样式
+    }
+} // 设置虚线样式
+
 function makePDFTable({
     doc,
     tableRowArr,
@@ -154,6 +250,7 @@ function makePDFTable({
         fontSize: 8,
     },
     tableConfig = {},
+    noPagination = false,
 } = {}) {
     let _config = {
         页面高度: doc.page.height,
@@ -278,7 +375,7 @@ function makePDFTable({
         if (_config["表格另起一页判断"]) {
             //先做第一页
             //表格和段落不在同一页
-            doc.addPage();
+            if (!noPagination) doc.addPage();
         }
         //绘制表头
         let pageOneCoordArr = _config["表格第一页起始坐标"];
@@ -302,7 +399,7 @@ function makePDFTable({
             current_y = current_y + _config["表体单行高度"];
         }
         if (rowLeftCount <= 0) return;
-        doc.addPage();
+        if (!noPagination) doc.addPage();
         for (let i = 0; i < _config["表格剩余所需页数"]; i++) {
             let pageRowCount =
                 _config["表格单页可用行数"] < rowLeftCount
@@ -324,7 +421,7 @@ function makePDFTable({
             }
             tableRowRestPageArr = tableRowRestPageArr.slice(_config["表格单页可用行数"]);
             rowLeftCount = rowLeftCount - pageRowCount;
-            if (i !== _config["表格剩余所需页数"] - 1) doc.addPage();
+            if (i !== _config["表格剩余所需页数"] - 1 && !noPagination) doc.addPage();
             // console.log("分页", doc._pageBuffer.length, doc.x, doc.y);
         } //绘制剩余的表格
     }
@@ -353,17 +450,6 @@ function makePDFTable({
             current_x = cell_x + columnWidth; //下一个单元格的起始坐标
         }); // 绘制文本和边框
     }
-
-    function countFullWidthCharacters(str) {
-        if (str === undefined) return 0;
-        let fullWidthCount = 0;
-        for (let i = 0; i < str.length; i++) {
-            if (!str[i].match(/[\u0000-\u00ff]/g)) {
-                fullWidthCount++;
-            }
-        }
-        return fullWidthCount;
-    } // 计算全角字符的个数
 
     // 调整字体大小
     function getCellHeight(fontSize) {
@@ -417,3 +503,14 @@ function makePDFTable({
         });
     }
 }
+
+function countFullWidthCharacters(str) {
+    if (str === undefined) return 0;
+    let fullWidthCount = 0;
+    for (let i = 0; i < str.length; i++) {
+        if (!str[i].match(/[\u0000-\u00ff]/g)) {
+            fullWidthCount++;
+        }
+    }
+    return fullWidthCount;
+} // 计算全角字符的个数
