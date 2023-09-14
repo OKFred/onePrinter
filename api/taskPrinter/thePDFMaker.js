@@ -310,7 +310,7 @@ function makePDFTable({
         表格列数: tableColumnArr.length,
         表体行数: tableRowArr.length,
         表格上下间距比: 5, //%
-        表格左右间距比: 5, //%
+        表格左右间距比: 3, //%
         //待计算属性
         表格上下间距: "",
         表格左右间距: "",
