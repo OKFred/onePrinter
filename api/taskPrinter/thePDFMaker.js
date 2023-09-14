@@ -309,8 +309,8 @@ function makePDFTable({
         字体大小: 8,
         表格列数: tableColumnArr.length,
         表体行数: tableRowArr.length,
-        表格上下间距比: 5, //%
-        表格左右间距比: 3, //%
+        表格上下间距比: 3, //%
+        表格左右间距比: 5, //%
         //待计算属性
         表格上下间距: "",
         表格左右间距: "",
@@ -337,8 +337,14 @@ function makePDFTable({
         表格剩余所需页数: "",
         表格所需总页数: "",
         //计算方法
-        表格上下间距计算: () => (_config["页面高度"] * _config["表格上下间距比"]) / 100,
-        表格左右间距计算: () => (_config["页面宽度"] * _config["表格左右间距比"]) / 100,
+        表格上下间距计算: () =>
+            (_config["页面高度"] *
+                (tableConfig.marginTopOrBottomRatio || _config["表格上下间距比"])) /
+            100,
+        表格左右间距计算: () =>
+            (_config["页面宽度"] *
+                (tableConfig.marginLeftOrRightRatio || _config["表格左右间距比"])) /
+            100,
         表头单行高度计算: () => getCellHeight(_config["字体大小"]),
         表体单行高度计算: () => getCellHeight(_config["字体大小"]),
         表格宽度计算: () => _config["页面宽度"] - _config["表格左右间距"] * 2,
