@@ -393,11 +393,27 @@ function makePDFTable({
         表格所需总页数计算: () => _config["表格剩余所需页数"] + 1,
     };
     function main() {
+        let checkResult = preCheck();
+        if (!checkResult) return console.log("表格数据格式错误");
         init();
         // console.log(_config);
         makeTable();
     }
     main();
+
+    function preCheck() {
+        //检查表体是否为二维数组，而不是三维数组或者更高维
+        if (!Array.isArray(tableRowArr)) return false;
+        if (tableRowArr.length === 0) return false;
+        if (!Array.isArray(tableRowArr[0])) return false;
+        if (tableRowArr[0].length === 0) return false;
+        if (Array.isArray(tableRowArr[0][0])) return false;
+        //检查表头是否为一维数组
+        if (!Array.isArray(tableColumnArr)) return false;
+        if (tableColumnArr.length === 0) return false;
+        if (Array.isArray(tableColumnArr[0])) return false;
+        return true;
+    }
 
     function init() {
         _config["表格上下间距"] = _config["表格上下间距计算"]();
