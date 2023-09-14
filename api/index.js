@@ -4,6 +4,7 @@
  */
 import http from "http";
 import app from "../components/myServer/index.js";
+import "../components/myGarbageCollector/index.js";
 import { onPostMessage } from "../components/myWebSocketClient/index.js";
 import { onNewPDF } from "./taskPrinter/thePDFMaker.js";
 import { onUpload } from "./taskPrinter/theUploader.js";
