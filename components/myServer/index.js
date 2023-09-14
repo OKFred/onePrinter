@@ -19,6 +19,7 @@ app.use(
     express.static("public", {
         setHeaders: function (res, path, stat) {
             res.set("Access-Control-Allow-Origin", "*");
+            res.set("Access-Control-Expose-Headers", `Content-Disposition,download-filename`);
         },
     }),
 ); //跨域
