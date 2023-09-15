@@ -56,8 +56,10 @@ async function onNewPDF(
     }
     if (!paperWidth) paperWidth = printerPaperWidth;
     if (!paperHeight) paperHeight = printerPaperHeight;
-    let relativePath = "/public/打印" + new Date().getTime() + ".pdf";
-    let absolutePath = path.join(process.cwd(), relativePath);
+    let relativePath = "/api/printer/public/打印" + new Date().getTime() + ".pdf";
+    //虚拟是/api/printer/public/，实际是/public/
+    let _relativePath = relativePath.replace(/^\/api\/printer\/public\//g, "/public/");
+    let absolutePath = path.join(process.cwd(), _relativePath);
     let result = await new Promise((resolve, reject) => {
         let pdfDoc = new PDFDocument({
             font: path.join(__dirname, font_regular),
@@ -260,7 +262,9 @@ function makePDFImage({
     if (!Array.isArray(imageArr)) return;
     for (let imageObj of imageArr) {
         let { relativePath } = imageObj || {};
-        let absolutePath = path.join(process.cwd(), relativePath);
+        //虚拟是/api/printer/public/，实际是/public/
+        let _relativePath = relativePath.replace(/^\/api\/printer\/public\//g, "/public/");
+        let absolutePath = path.join(process.cwd(), _relativePath);
         if (
             !relativePath ||
             /http/i.test(relativePath) ||

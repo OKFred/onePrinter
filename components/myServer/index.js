@@ -15,7 +15,7 @@ let sessionMiddleware = session({
 }); //启用session
 
 app.use(
-    "/public",
+    "/api/printer/public",
     express.static("public", {
         setHeaders: function (res, path, stat) {
             res.set("Access-Control-Allow-Origin", "*");

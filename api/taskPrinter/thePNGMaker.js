@@ -17,7 +17,9 @@ async function onNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
         });
         return;
     }
-    let absolutePath = path.join(process.cwd(), relativePath);
+    //虚拟是/api/printer/public/，实际是/public/
+    let _relativePath = relativePath.replace(/^\/api\/printer\/public\//g, "/public/");
+    let absolutePath = path.join(process.cwd(), _relativePath);
     if (
         !fs.existsSync(absolutePath) ||
         !absolutePath.startsWith(path.join(process.cwd(), "public"))
@@ -48,7 +50,7 @@ async function onNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
         } else {
             for (let imageData of imageDataArr) {
                 fs.writeFileSync(imageBase + `_${i}.png`, imageData);
-                result.push("/public/" + fileName + `_${i}.png`);
+                result.push("/api/printer/public/" + fileName + `_${i}.png`);
                 i++;
             }
         }
@@ -75,7 +77,9 @@ async function onPrintPNG({ base64, relativePath = "", config = {} } = {}, callb
         return;
     }
     if (!base64) {
-        let absolutePath = path.join(process.cwd(), relativePath);
+        //虚拟是/api/printer/public/，实际是/public/
+        let _relativePath = relativePath.replace(/^\/api\/printer\/public\//g, "/public/");
+        let absolutePath = path.join(process.cwd(), _relativePath);
         let fileBuffer = fs.readFileSync(absolutePath);
         base64 = fileBuffer.toString("base64");
     }

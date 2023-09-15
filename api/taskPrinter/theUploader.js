@@ -21,8 +21,10 @@ async function onUpload(data, callbacks) {
             if (!fileExtension) {
                 return callbacks?.({ message: "上传失败：文件格式有误", success: false });
             }
-            let relativePath = `/public/uploads/${originalFilename}${fileExtension}`;
-            let absolutePath = path.join(process.cwd(), relativePath);
+            let _relativePath = `/public/uploads/${originalFilename}${fileExtension}`;
+            // 实际是/public/，虚拟成/api/printer/public/
+            let relativePath = _relativePath.replace(/^\/public\//g, "/api/printer/public/");
+            let absolutePath = path.join(process.cwd(), _relativePath);
             urlArr.push(relativePath);
             fs.copyFile(fileObj["path"], absolutePath, (err) => {
                 if (err) console.log(err);
