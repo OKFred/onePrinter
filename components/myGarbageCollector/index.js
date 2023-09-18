@@ -14,9 +14,18 @@ async function main() {
         timeDifference += 7 * 24 * 60 * 60 * 1000; //如果今天是周一，那么下周一再清理
     }
     console.log("下次清理时间", new Date(Date.now() + timeDifference).toLocaleString());
-    setInterval(cleanUp, timeDifference);
+    setTimeout(() => {
+        cleanUp();
+        loop();
+    }, timeDifference);
 }
 main();
+
+async function loop() {
+    //每周一1点清理
+    let sevenDays = 1000 * 60 * 60 * 24 * 7;
+    setInterval(cleanUp, sevenDays);
+}
 
 async function cleanUp() {
     console.log(new Date().toLocaleString(), "开始GC");
