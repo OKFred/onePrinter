@@ -6,11 +6,27 @@ import path from "path";
 
 //每周一1点清理
 console.log("已引入垃圾回收器，将自动清理public下的文件");
-setTimeout(main, 10000); //项目启动10秒后开始执行
+
 async function main() {
+    //检查今天是否是周一
+    let timeDifference = await getTimeDifference();
+    if (timeDifference < 0) {
+        timeDifference += 7 * 24 * 60 * 60 * 1000; //如果今天是周一，那么下周一再清理
+    }
+    console.log("下次清理时间", new Date(Date.now() + timeDifference).toLocaleString());
+    setInterval(cleanUp, timeDifference);
+}
+main();
+
+async function cleanUp() {
+    console.log(new Date().toLocaleString(), "开始GC");
     let whiteList = [".gitkeep"];
     let absolutePath = path.join(process.cwd(), "public");
     await removeFiles(absolutePath, whiteList);
+    return true;
+}
+
+async function getTimeDifference() {
     let timeNow = new Date();
     let timeNextMondayAt1am = new Date(
         timeNow.getFullYear(),
@@ -21,8 +37,7 @@ async function main() {
         0,
     );
     let timeDifference = timeNextMondayAt1am - timeNow;
-    console.log("下次计划清理时间：", timeNextMondayAt1am.toLocaleString());
-    setTimeout(main, timeDifference);
+    return timeDifference;
 }
 
 async function removeFiles(absolutePath, whiteList) {
