@@ -61,7 +61,7 @@ async function onNewTask(
         dbNumber = 1,
         startByte = 0,
         length = 4,
-        wordLength = 0x04,
+        wordLength = 0x08,
     } = {},
     callbacks,
 ) {
@@ -250,7 +250,7 @@ async function startTask({
     dbNumber = 1,
     startByte = 1400,
     length = 4,
-    wordLength = 0x04,
+    wordLength = 0x08,
 } = {}) {
     let client = this;
     // 使用 ReadArea 方法来读取 VD1400 的数据
