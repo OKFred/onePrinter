@@ -1,0 +1,104 @@
+[
+    {
+        "request": {
+            "header": {
+                "method": "GET",
+                "headers": {}
+            },
+            "url": "/api/test",
+            "param": [
+                {
+                    "name": "param1",
+                    "type": "string",
+                    "required": false,
+                    "description": "测试"
+                }
+            ]
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "测试GET",
+            "tag": "接口测试"
+        }
+    },
+    {
+        "request": {
+            "header": {
+                "method": "POST",
+                "headers": {
+                    "Content-Type": "multipart/form-data"
+                }
+            },
+            "url": "/api/test1",
+            "param": [
+                {
+                    "name": "param1",
+                    "type": "file",
+                    "required": true,
+                    "description": "参数1"
+                }
+            ]
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "测试POST，multipart/form-data",
+            "tag": "接口测试"
+        }
+    },
+    {
+        "request": {
+            "header": {
+                "method": "POST",
+                "headers": {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+            },
+            "url": "/api/test2",
+            "param": [
+                {
+                    "name": "param1",
+                    "type": "string",
+                    "required": true,
+                    "description": "参数1"
+                }
+            ]
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "测试POST，x-www-form-urlencoded",
+            "tag": "接口测试"
+        }
+    },
+    {
+        "request": {
+            "header": {
+                "method": "POST",
+                "headers": {
+                    "Content-Type": "application/json"
+                }
+            },
+            "url": "/api/test3",
+            "param": [
+                {
+                    "name": "param1",
+                    "type": "file",
+                    "required": true,
+                    "description": "参数1"
+                }
+            ]
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "测试POST，application/json",
+            "tag": "接口测试"
+        }
+    }
+]

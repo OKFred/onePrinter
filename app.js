@@ -28,14 +28,6 @@ printerID=CPCL
 # 纸张大小设置
 printerPaperWidth=80
 printerPaperHeight=50
-
-# 冷库数据库
-MYSQL_HOST=127.0.0.1
-MYSQL_USER=root
-MYSQL_PASSWORD=
-MYSQL_DATABASE=
-freezerTableName=
-freezerTaskToken=
 `,
         );
         console.log("🚩首次加载，请配置目录下的.env");
