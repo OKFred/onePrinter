@@ -1,67 +1,11 @@
-# 支持IPP协议的打印机API
+# Node.js 打印机 API
 
-## 测试
+## 接口文档： /openapi
 
-方法：ALL
+## 运行方式：
 
-路径：/
+### 1. npm install
 
-## 获取打印机信息
+### 2. 配置环境变量(参考.env.example)
 
-方法：GET
-
-路径：/api/printer/printerInfo
-
-入参：null
-
-出参：{ "message": "", "ok": "" }
-
-## 生成 PDF 文件，准备打印预览
-
-方法：POST
-
-路径：/api/printer/makePDF
-
-入参：{ "textArr" : [] } 打印文本对象
-
-出参：{ "data": { "relativePath": "" }, "message": "", "ok": "" }
-
-## 打印 PDF 文件
-
-方法：POST
-
-路径：/api/printer/printPDF
-
-入参： { "relativePath": "" } pdf 文件路径
-
-出参：{ "message": "", "ok": "" }
-
-## 生成 PNG 文件，准备打印图片
-
-方法：POST
-
-路径：/api/printer/makePNG
-
-入参：{ "relativePath" : "" } PDF 文件路径
-
-出参：{ data: { "relativePathArr": [] }, "message": "", "ok": "" }
-
-## 打印 PNG 文件
-
-方法：POST
-
-路径：/api/printer/printPNG
-
-入参： { "relativePathArr": [] } PNG 文件路径
-
-出参：{ "data": [], "message": "", "ok": "" } 任务列表
-
-## 打印 PNG 文件
-
-方法：POST
-
-路径：/api/printer/printPNG
-
-入参： { "relativePath": "" } PNG 文件路径
-
-出参：{ "data": [], "message": "", "ok": "" } 任务列表
+### 3. npm run debug 或者 npm run build
