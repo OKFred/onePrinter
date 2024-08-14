@@ -15,7 +15,7 @@ async function onPrinterInfo(data, callbacks) {
                 console.error(thisTime, "获取打印机信息失败:", err);
                 resolve(false);
             } else {
-                console.log(thisTime, "获取打印机信息成功!");
+                // console.log(thisTime, "获取打印机信息成功!");
                 // console.log("打印机信息：:", response);
                 resolve(response);
             }

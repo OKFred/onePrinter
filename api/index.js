@@ -68,6 +68,7 @@ function routerMaker(queryObj) {
         if (typeof fn === "string") {
             let [module_name, function_name] = fn.split(".");
             return async function (req, res) {
+                console.log("🚀", new Date().Format("hh:mm:ss"), req.method, req.url);
                 await generalHandler(req, res, module_name, function_name);
             };
         }
@@ -105,10 +106,9 @@ async function generalHandler(req, res, module_name, function_name) {
         let params = (req.method === "GET" ? req.query : req.body) || {};
         params = { ...headers, ...params, files };
         let result = await thisFn[function_name](params);
-        console.log(result);
         res.send(result || { ok: true, message: "运行成功", data: null });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.json({ ok: false, message: error.message });
     }
 }
