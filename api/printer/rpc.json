@@ -23,7 +23,15 @@
                 "Content-Type": "multipart/form-data"
             },
             "url": "/api/printer/uploadPDF",
-            "param": []
+            "param": [
+                {
+                    "name": "files",
+                    "type": "string",
+                    "format": "binary",
+                    "required": true,
+                    "description": "PDF文件"
+                }
+            ]
         },
         "response": {
             "data": {}

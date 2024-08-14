@@ -41,11 +41,13 @@ async function onPrintPDF({ relativePath } = {}, callbacks) {
         !fs.existsSync(absolutePath) ||
         !absolutePath.startsWith(path.join(process.cwd(), "public"))
     ) {
-        return callbacks?.({ ok: false, data: null, message: "文件不存在" });
+        let result = { ok: false, data: null, message: "文件不存在" };
+        return callbacks?.(result) || result;
     } //检查最终路径是否在./public下，防止越权访问。
     let printerResponse = await print(fs.readFileSync(absolutePath));
     let thisTime = new Date().toLocaleTimeString();
-    let message = printerResponse ? "打印任务已发送" : "打印任务发送失败";
+    let isOK = /successful/.test(printerResponse?.statusCode);
+    let message = isOK || printerResponse ? "打印任务已发送" : "打印任务发送失败";
     console.log(thisTime, message);
     let result = {
         ok: printerResponse ? true : false,
