@@ -3,7 +3,7 @@ import path from "path";
 import * as pdf2img from "pdf-img-convert";
 import { onPostMessage } from "../../components/myWebSocketClient/index.js";
 
-let printerID = globalThis.envGetter("printerID");
+let printerID = process.env["printerID"];
 
 export { onNewPNG, onPrintPNG, onPrintNewPNG };
 
@@ -11,7 +11,7 @@ export { onNewPNG, onPrintPNG, onPrintNewPNG };
 async function onNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
     if (!relativePath) {
         callbacks?.({
-            success: false,
+            ok: false,
             data: null,
             message: "参数错误",
         });
@@ -24,7 +24,7 @@ async function onNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
         !fs.existsSync(absolutePath) ||
         !absolutePath.startsWith(path.join(process.cwd(), "public"))
     ) {
-        return callbacks?.({ success: false, data: null, message: "文件不存在" });
+        return callbacks?.({ ok: false, data: null, message: "文件不存在" });
     } //检查最终路径是否在./public下，防止越权访问。
     let fileName = path.basename(absolutePath)?.replace(/\.pdf$/i, "");
     let imageBase = path.join(process.cwd(), "public", fileName);
@@ -59,7 +59,7 @@ async function onNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
         result = error;
     }
     callbacks?.({
-        success: result ? true : false,
+        ok: result ? true : false,
         data: { relativePathArr: result },
         message: result ? "PNG文件已就位" : "PNG文件生成失败",
     });
@@ -70,7 +70,7 @@ async function onNewPNG({ relativePath = "", config = {} } = {}, callbacks) {
 async function onPrintPNG({ base64, relativePath = "", config = {} } = {}, callbacks) {
     if (!relativePath && !base64) {
         callbacks?.({
-            success: false,
+            ok: false,
             data: null,
             message: "参数错误",
         });
@@ -152,7 +152,7 @@ async function onPrintPNG({ base64, relativePath = "", config = {} } = {}, callb
         };
     } else {
         callbacks?.({
-            success: false,
+            ok: false,
             data: null,
             message: "未定义打印语言",
         });
@@ -180,20 +180,20 @@ async function onPrintNewPNG({ relativePath = "", config = {} } = {}, callbacks)
     config.base64 = true;
     let base64Arr = await onNewPNG({ relativePath, config });
     if (!base64Arr || !base64Arr.length) {
-        return callbacks?.({ success: false, data: null, message: "打印失败" });
+        return callbacks?.({ ok: false, data: null, message: "打印失败" });
     }
     let try_count = 0;
     let success_count = 0;
-    let _callbacks = ({ success }) => {
-        if (success) success_count++;
+    let _callbacks = ({ ok }) => {
+        if (ok) success_count++;
     };
     for (let base64 of base64Arr) {
         try_count++;
         await onPrintPNG({ base64, config }, _callbacks);
     }
-    if (success_count === 0) return callbacks({ success: false, message: "打印任务失败" });
+    if (success_count === 0) return callbacks({ ok: false, message: "打印任务失败" });
     else if (success_count < try_count) {
-        return callbacks({ success: false, message: "部分打印任务失败" });
+        return callbacks({ ok: false, message: "部分打印任务失败" });
     }
-    return callbacks({ success: true, message: "打印任务成功" });
+    return callbacks({ ok: true, message: "打印任务成功" });
 }

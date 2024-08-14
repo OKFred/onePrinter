@@ -1,0 +1,62 @@
+[
+    {
+        "request": {
+            "handlers": ["theUSBPrinter.onPrinterInfo"],
+            "method": "GET",
+            "headers": {},
+            "url": "/api/printer/printerInfo",
+            "param": []
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "获取打印机信息",
+            "tag": "打印"
+        }
+    },
+    {
+        "request": {
+            "handlers": ["theUploader.onUpload"],
+            "method": "POST",
+            "headers": {
+                "Content-Type": "multipart/form-data"
+            },
+            "url": "/api/printer/uploadPDF",
+            "param": []
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "上传PDF",
+            "tag": "打印"
+        }
+    },
+    {
+        "request": {
+            "handlers": ["theUSBPrinter.onPrintPDF"],
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "url": "/api/printer/printPDF",
+            "param": [
+                {
+                    "name": "relativePath",
+                    "type": "string",
+                    "required": true,
+                    "description": "PDF的相对路径",
+                    "examples": ["/api/printer/public/xxx.pdf"]
+                }
+            ]
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "打印PDF",
+            "tag": "打印"
+        }
+    }
+]

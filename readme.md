@@ -14,7 +14,7 @@
 
 入参：null
 
-出参：{ "message": "", "success": "" }
+出参：{ "message": "", "ok": "" }
 
 ## 生成 PDF 文件，准备打印预览
 
@@ -24,7 +24,7 @@
 
 入参：{ "textArr" : [] } 打印文本对象
 
-出参：{ "data": { "relativePath": "" }, "message": "", "success": "" }
+出参：{ "data": { "relativePath": "" }, "message": "", "ok": "" }
 
 ## 打印 PDF 文件
 
@@ -34,7 +34,7 @@
 
 入参： { "relativePath": "" } pdf 文件路径
 
-出参：{ "message": "", "success": "" }
+出参：{ "message": "", "ok": "" }
 
 ## 生成 PNG 文件，准备打印图片
 
@@ -44,7 +44,7 @@
 
 入参：{ "relativePath" : "" } PDF 文件路径
 
-出参：{ data: { "relativePathArr": [] }, "message": "", "success": "" }
+出参：{ data: { "relativePathArr": [] }, "message": "", "ok": "" }
 
 ## 打印 PNG 文件
 
@@ -54,7 +54,7 @@
 
 入参： { "relativePathArr": [] } PNG 文件路径
 
-出参：{ "data": [], "message": "", "success": "" } 任务列表
+出参：{ "data": [], "message": "", "ok": "" } 任务列表
 
 ## 打印 PNG 文件
 
@@ -64,4 +64,4 @@
 
 入参： { "relativePath": "" } PNG 文件路径
 
-出参：{ "data": [], "message": "", "success": "" } 任务列表
+出参：{ "data": [], "message": "", "ok": "" } 任务列表

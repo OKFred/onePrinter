@@ -1,13 +1,13 @@
 import swaggerUi from "swagger-ui-express";
 
-export default function ({ app, apiDocPath = "/openapi", swaggerOptions, rpcArr, tagArr }) {
+export default function ({ app, apiDocPath = "/openapi", swaggerOptions, PORT, rpcArr, tagArr }) {
     if (!swaggerOptions) {
         swaggerOptions = {
-            openapi: "3.0.0",
+            openapi: "3.1.0",
             info: {
-                title: "接口文档",
+                title: "Printer API",
                 version: "1.0.0",
-                description: "swagger接口文档",
+                description: "打印PDF，适配斑马等支持IPP协议的打印机",
             },
             tags: tagArr,
             components: {
@@ -22,7 +22,7 @@ export default function ({ app, apiDocPath = "/openapi", swaggerOptions, rpcArr,
                     默认返回格式: {
                         type: "object",
                         properties: {
-                            success: {
+                            ok: {
                                 type: "boolean",
                             },
                             data: {
@@ -46,8 +46,8 @@ export default function ({ app, apiDocPath = "/openapi", swaggerOptions, rpcArr,
     let pathsObj = {};
     rpcArr.forEach((obj) => {
         let { request, info } = obj;
-        let { url, header = {}, param } = request;
-        let method = header.method.toLowerCase();
+        let { url, method = {}, headers, param } = request;
+        method = method.toLowerCase();
         let methodObj = {
             tags: [info.tag],
             summary: info.name,
@@ -63,12 +63,13 @@ export default function ({ app, apiDocPath = "/openapi", swaggerOptions, rpcArr,
                     ...item,
                     in: method === "get" ? "query" : "body",
                     schema: {
-                        type: item.type,
+                        ...item,
                     },
+                    required: param.filter((item) => item.required).map((item) => item.name),
                 };
             });
-        } else if (method === "post") {
-            let contentType = header.headers?.["Content-Type"];
+        } else {
+            let contentType = headers?.["Content-Type"] || headers?.["content-type"];
             methodObj.requestBody = {
                 content: {
                     [contentType]: {
@@ -77,10 +78,13 @@ export default function ({ app, apiDocPath = "/openapi", swaggerOptions, rpcArr,
                             type: "object",
                             properties: param.reduce((prev, item) => {
                                 prev[item.name] = {
-                                    type: item.type,
+                                    ...item,
                                 };
                                 return prev;
                             }, {}),
+                            required: param
+                                .filter((item) => item.required)
+                                .map((item) => item.name),
                         },
                     },
                 },
@@ -90,6 +94,6 @@ export default function ({ app, apiDocPath = "/openapi", swaggerOptions, rpcArr,
         pathsObj[url][method] = methodObj;
     });
     swaggerOptions.paths = pathsObj;
-    console.log("接口文档地址：", apiDocPath);
+    console.log("接口文档地址：", "http://127.0.0.1:" + PORT + apiDocPath);
     return app.use(apiDocPath, swaggerUi.serve, swaggerUi.setup(swaggerOptions));
 }

@@ -1,10 +1,8 @@
 [
     {
         "request": {
-            "header": {
-                "method": "GET",
-                "headers": {}
-            },
+            "method": "GET",
+            "headers": {},
             "url": "/api/test",
             "param": [
                 {
@@ -25,11 +23,9 @@
     },
     {
         "request": {
-            "header": {
-                "method": "POST",
-                "headers": {
-                    "Content-Type": "multipart/form-data"
-                }
+            "method": "POST",
+            "headers": {
+                "Content-Type": "multipart/form-data"
             },
             "url": "/api/test1",
             "param": [
@@ -51,11 +47,9 @@
     },
     {
         "request": {
-            "header": {
-                "method": "POST",
-                "headers": {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/x-www-form-urlencoded"
             },
             "url": "/api/test2",
             "param": [
@@ -77,11 +71,9 @@
     },
     {
         "request": {
-            "header": {
-                "method": "POST",
-                "headers": {
-                    "Content-Type": "application/json"
-                }
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json"
             },
             "url": "/api/test3",
             "param": [

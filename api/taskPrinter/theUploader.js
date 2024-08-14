@@ -5,9 +5,10 @@ import mimeObj from "../../base/mimeMap.js";
 
 export { onUpload };
 
-async function onUpload(data, callbacks) {
+async function onUpload(params, callbacks) {
     let urlArr = [];
-    for (let value of Object.values(data)) {
+    let { files } = params;
+    for (let value of Object.values(files)) {
         let fileArr = Array.isArray(value) ? value : [value]; //兼容传多个文件的情况
         for (let fileObj of fileArr) {
             let { originalFilename, type } = fileObj;
@@ -19,7 +20,7 @@ async function onUpload(data, callbacks) {
                 } //找到文件后缀名
             }
             if (!fileExtension) {
-                return callbacks?.({ message: "上传失败：文件格式有误", success: false });
+                return callbacks?.({ message: "上传失败：文件格式有误", ok: false });
             }
             let _relativePath = `/public/uploads/${originalFilename}${fileExtension}`;
             // 实际是/public/，虚拟成/api/printer/public/
@@ -32,5 +33,5 @@ async function onUpload(data, callbacks) {
         }
     }
     console.log("已上传", urlArr.join("\n"));
-    callbacks?.({ message: "上传成功", success: true, data: urlArr });
+    callbacks?.({ message: "上传成功", ok: true, data: urlArr });
 }

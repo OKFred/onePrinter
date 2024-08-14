@@ -6,7 +6,7 @@ import expressFormData from "express-form-data";
 //配置 Express http 服务器
 let app = express();
 let sessionMiddleware = session({
-    secret: global.envGetter("sessionSecret") || "secret",
+    secret: process.env["sessionSecret"] || "secret",
     cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: false, sameSite: false },
     saveUninitialized: false,
     resave: true,
@@ -22,7 +22,8 @@ app.use(
             res.set("Access-Control-Expose-Headers", `Content-Disposition,download-filename`);
         },
     }),
-); //跨域
+); //上传
+
 app.use(json()); //接收 POST 必备
 app.use(urlencoded({ extended: true }));
 app.use(expressFormData.parse());
@@ -31,7 +32,7 @@ app.disable("x-powered-by");
 app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Credentials", true);
-    res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
+    res.header("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,DELETE");
     res.header("Access-Control-Allow-Headers", "*");
     next();
 }); //跨域

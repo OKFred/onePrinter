@@ -8,8 +8,8 @@ let PDFDocument = pdfkit;
 let font_regular = "SourceHanSansCN-Regular.ttf";
 let font_bold = "SourceHanSansCN-Bold.ttf";
 
-let printerPaperWidth = globalThis.envGetter("printerPaperWidth");
-let printerPaperHeight = globalThis.envGetter("printerPaperHeight");
+let printerPaperWidth = process.env["printerPaperWidth"];
+let printerPaperHeight = process.env["printerPaperHeight"];
 
 export { onNewPDF };
 
@@ -48,7 +48,7 @@ async function onNewPDF(
 ) {
     if (!Array.isArray(textArr) && !Array.isArray(tableRowArr)) {
         callbacks?.({
-            success: false,
+            ok: false,
             data: null,
             message: "参数错误",
         });
@@ -166,7 +166,7 @@ async function onNewPDF(
         pdfDoc.end();
     });
     callbacks?.({
-        success: result ? true : false,
+        ok: result ? true : false,
         data: { relativePath },
         message: result ? "PDF文件已就位" : "PDF文件生成失败",
     });

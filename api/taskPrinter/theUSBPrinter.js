@@ -2,13 +2,13 @@ import fs from "fs";
 import path from "path";
 import ipp from "ipp";
 
-let printerURL = globalThis.envGetter("printerURL");
+let printerURL = process.env["printerURL"];
 let printer = ipp.Printer(printerURL); // 创建IPP客户端
 
 export { onPrinterInfo, onPrintPDF };
 
 async function onPrinterInfo(data, callbacks) {
-    let result = await new Promise((resolve, reject) => {
+    let printerResponse = await new Promise((resolve, reject) => {
         printer.execute("Get-Printer-Attributes", null, (err, response) => {
             let thisTime = new Date().toLocaleTimeString();
             if (err) {
@@ -21,32 +21,38 @@ async function onPrinterInfo(data, callbacks) {
             }
         });
     });
-    callbacks?.({
-        success: result ? true : false,
-        data: result,
-        message: result ? "打印机信息获取成功" : "打印机信息获取失败",
-    });
+    let result = {
+        ok: printerResponse ? true : false,
+        data: printerResponse,
+        message: printerResponse ? "打印机信息获取成功" : "打印机信息获取失败",
+    };
+    return callbacks?.(result) || result;
 }
 
 async function onPrintPDF({ relativePath } = {}, callbacks) {
     if (!relativePath) {
-        return callbacks?.({ success: false, data: null, message: "缺少入参：" + "relativePath" });
+        let result = { ok: false, data: null, message: "缺少入参：" + "relativePath" };
+        return callbacks?.(result) || result;
     }
     //虚拟是/api/printer/public/，实际是/public/
     let _relativePath = relativePath.replace(/^\/api\/printer\/public\//g, "/public/");
     let absolutePath = path.join(process.cwd(), _relativePath);
-    if (!fs.existsSync(absolutePath) || !absolutePath.startsWith(path.join(process.cwd(), "public"))) {
-        return callbacks?.({ success: false, data: null, message: "文件不存在" });
+    if (
+        !fs.existsSync(absolutePath) ||
+        !absolutePath.startsWith(path.join(process.cwd(), "public"))
+    ) {
+        return callbacks?.({ ok: false, data: null, message: "文件不存在" });
     } //检查最终路径是否在./public下，防止越权访问。
-    let result = await print(fs.readFileSync(absolutePath));
+    let printerResponse = await print(fs.readFileSync(absolutePath));
     let thisTime = new Date().toLocaleTimeString();
-    let message = result ? "打印任务已发送" : "打印任务发送失败";
+    let message = printerResponse ? "打印任务已发送" : "打印任务发送失败";
     console.log(thisTime, message);
-    callbacks?.({
-        success: result ? true : false,
-        data: result,
+    let result = {
+        ok: printerResponse ? true : false,
+        data: printerResponse,
         message,
-    });
+    };
+    return callbacks?.(result) || result;
 }
 
 async function print(data) {
