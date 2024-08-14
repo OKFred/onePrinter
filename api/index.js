@@ -8,12 +8,12 @@ import app from "../components/myServer/index.js";
 import "../components/myGarbageCollector/index.js";
 import swaggerMiddleware from "../components/mySwagger/index.js";
 let rpcExampleStr = fs.readFileSync("./components/mySwagger/rpc.example.json");
-let rpcStr = fs.readFileSync("./api/taskPrinter/rpc.json");
-import { onUpload } from "./taskPrinter/theUploader.js";
-import { onPrinterInfo, onPrintPDF } from "./taskPrinter/theUSBPrinter.js";
+let rpcStr = fs.readFileSync("./api/printer/rpc.json");
+import { onUpload } from "./printer/theUploader.js";
+import { onPrinterInfo, onPrintPDF } from "./printer/theUSBPrinter.js";
 // import { onPostMessage } from "../components/myWebSocketClient/index.js";
-// import { onNewPDF } from "./taskPrinter/thePDFMaker.js";
-// import { onNewPNG, onPrintPNG, onPrintNewPNG } from "./taskPrinter/thePNGMaker.js";
+// import { onNewPDF } from "./printer/thePDFMaker.js";
+// import { onNewPNG, onPrintPNG, onPrintNewPNG } from "./printer/thePNGMaker.js";
 
 async function main() {
     let rpcExampleArr = JSON.parse(rpcExampleStr);
@@ -100,7 +100,7 @@ function testHandler(req, res) {
 
 async function generalHandler(req, res, module_name, function_name) {
     try {
-        let thisFn = await import(`./taskPrinter/${module_name}.js`);
+        let thisFn = await import(`./printer/${module_name}.js`);
         let { headers, files } = req;
         let params = (req.method === "GET" ? req.query : req.body) || {};
         params = { ...headers, ...params, files };
