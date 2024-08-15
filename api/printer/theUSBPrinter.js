@@ -47,10 +47,10 @@ async function onPrintPDF({ relativePath } = {}, callbacks) {
     let printerResponse = await print(fs.readFileSync(absolutePath));
     let thisTime = new Date().toLocaleTimeString();
     let isOK = /successful/.test(printerResponse?.statusCode);
-    let message = isOK || printerResponse ? "打印任务已发送" : "打印任务发送失败";
+    let message = isOK ? "打印任务已发送" : "打印任务发送失败";
     console.log(thisTime, message);
     let result = {
-        ok: printerResponse ? true : false,
+        ok: isOK,
         data: printerResponse,
         message,
     };
