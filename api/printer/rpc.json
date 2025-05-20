@@ -17,6 +17,90 @@
     },
     {
         "request": {
+            "handlers": ["thePDFMaker.onNewPDF"],
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "url": "/api/printer/makePDF",
+            "param": [
+                {
+                    "name": "paperWidth",
+                    "type": "number",
+                    "description": "纸张宽度"
+                },
+                {
+                    "name": "paperHeight",
+                    "type": "number",
+                    "description": "纸张高度"
+                },
+                {
+                    "name": "textArr",
+                    "type": "array",
+                    "description": "文本数组"
+                },
+                {
+                    "name": "textStyle",
+                    "type": "object",
+                    "description": "文本样式"
+                },
+                {
+                    "name": "tableColumnArr",
+                    "type": "array",
+                    "description": "表格列数组"
+                },
+                {
+                    "name": "tableRowArr",
+                    "type": "array",
+                    "description": "表格行数组"
+                },
+                {
+                    "name": "tableStyle",
+                    "type": "object",
+                    "description": "表格样式"
+                },
+                {
+                    "name": "tableConfig",
+                    "type": "object",
+                    "description": "表格配置"
+                },
+                {
+                    "name": "imageArr",
+                    "type": "array",
+                    "description": "图片数组"
+                },
+                {
+                    "name": "imageStyle",
+                    "type": "object",
+                    "description": "图片样式"
+                },
+                {
+                    "name": "dashArr",
+                    "type": "array",
+                    "description": "虚线数组"
+                },
+                {
+                    "name": "dashStyle",
+                    "type": "object",
+                    "description": "虚线样式"
+                },
+                {
+                    "name": "mixinArr",
+                    "type": "array",
+                    "description": ""
+                }
+            ]
+        },
+        "response": {
+            "data": {}
+        },
+        "info": {
+            "name": "制作PDF",
+            "tag": "制作"
+        }
+    },
+    {
+        "request": {
             "handlers": ["theUploader.onUpload"],
             "method": "POST",
             "headers": {

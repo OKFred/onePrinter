@@ -1,7 +1,7 @@
 # 2023-08-30
 
 # 引入node镜像
-FROM node:16
+FROM node:22.15.1
 
 # 在容器里创建一个目录
 WORKDIR /app/nodeJS/

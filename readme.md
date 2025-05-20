@@ -2,6 +2,9 @@
 
 ## 接口文档： /openapi
 
+## 运行版本：
+node v22.15.1
+
 ## 运行方式：
 
 ### 1. npm install
